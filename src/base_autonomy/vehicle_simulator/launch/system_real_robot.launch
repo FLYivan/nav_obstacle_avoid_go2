@@ -16,9 +16,9 @@
     <param name="autorepeat_rate" value="0.0" />
   </node>
   
-  <!-- <node pkg="go2_h264_repub" exec="go2_h264_repub" name="go2_h264_repub" output="screen">
-    <param name="multicast_iface" value="enp3s0"/> 
-  </node> -->
+  <node pkg="go2_h264_repub" exec="go2_h264_repub" name="go2_h264_repub" output="screen">
+    <param name="multicast_iface" value="wlp0s20f3"/> 
+  </node>
 
   <include file="$(find-pkg-share point_lio_unilidar)/launch/mapping_utlidar.launch">
     <arg name="rviz" value="false"/>

@@ -31,9 +31,9 @@ class Repuber(Node):  # 定义传感器转换节点类
             history=QoSHistoryPolicy.KEEP_LAST
 )
         self.imu_sub = self.create_subscription(SportModeState, '/sportmodestate', self.imu_callback, 50)  # 创建IMU订阅者
-        self.cloud_sub = self.create_subscription(PointCloud2, '/raw_processed_cloud', self.cloud_callback, 50)  # 创建点云订阅者
+        # self.cloud_sub = self.create_subscription(PointCloud2, '/raw_processed_cloud', self.cloud_callback, 50)  # 创建点云订阅者
 
-        # self.cloud_sub = self.create_subscription(PointCloud2, '/cloud_result', self.cloud_callback, 50)  # 创建降采样点云订阅者
+        self.cloud_sub = self.create_subscription(PointCloud2, '/lidar_points', self.cloud_callback, 50)  # 创建点云订阅者
 
         self.imu_raw_pub = self.create_publisher(Imu, '/hesai_go2/transformed_raw_imu', 50)  # 创建原始IMU发布者
         self.imu_pub = self.create_publisher(Imu, '/hesai_go2/transformed_imu', 50)  # 创建转换后IMU发布者
@@ -246,14 +246,14 @@ class Repuber(Node):  # 定义传感器转换节点类
         
         self.imu_raw_pub.publish(transformed_imu)  # 发布原始IMU数据
         
-        transformed_imu.orientation.x = 0.0  # 重置姿态X分量
-        transformed_imu.orientation.y = 0.0  # 重置姿态Y分量
-        transformed_imu.orientation.z = 0.0  # 重置姿态Z分量
-        transformed_imu.orientation.w = 1.0  # 重置姿态W分量
+        # transformed_imu.orientation.x = 0.0  # 重置姿态X分量
+        # transformed_imu.orientation.y = 0.0  # 重置姿态Y分量
+        # transformed_imu.orientation.z = 0.0  # 重置姿态Z分量
+        # transformed_imu.orientation.w = 1.0  # 重置姿态W分量
         
-        transformed_imu.linear_acceleration.x = 0.0  # 重置加速度X分量
-        transformed_imu.linear_acceleration.y = 0.0  # 重置加速度Y分量
-        transformed_imu.linear_acceleration.z = 0.0  # 重置加速度Z分量
+        # transformed_imu.linear_acceleration.x = 0.0  # 重置加速度X分量
+        # transformed_imu.linear_acceleration.y = 0.0  # 重置加速度Y分量
+        # transformed_imu.linear_acceleration.z = 0.0  # 重置加速度Z分量
         
         self.imu_pub.publish(transformed_imu)  # 发布转换后的IMU数据
 
