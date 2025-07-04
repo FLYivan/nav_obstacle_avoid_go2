@@ -4,9 +4,9 @@
   <arg name="sensorOffsetY" default="0.0"/>
   <arg name="cameraOffsetZ" default="0.0"/>
   <arg name="twoWayDrive" default="false"/>             # 是否支持前进后退，默认值false
-  <arg name="maxSpeed" default="1.0"/>                  # 原值1.0
+  <arg name="maxSpeed" default="0.2"/>                  # 原值1.0
   <arg name="autonomyMode" default="false"/>
-  <arg name="autonomySpeed" default="1.0"/>             # 原值1.0
+  <arg name="autonomySpeed" default="0.2"/>             # 原值1.0
   <arg name="joyToSpeedDelay" default="2.0"/>
   <arg name="goalCloseDis" default="0.4"/>
   <arg name="goalX" default="0.0"/>
