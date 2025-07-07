@@ -8,7 +8,7 @@
   <arg name="vehicleY" default="0.0"/>
   <arg name="checkTerrainConn" default="true"/>
   <arg name="use3DMode" default="true"/>
-  <arg name="noDataObstacle" default="true"/>
+  <arg name="noDataObstacle" default="false"/>
 
   <node pkg="joy" exec="joy_node" name="ps3_joy" output="screen" >
     <param name="dev" value="/dev/input/js0" />

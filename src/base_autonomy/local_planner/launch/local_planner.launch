@@ -4,18 +4,18 @@
   <arg name="sensorOffsetY" default="0.0"/>
   <arg name="cameraOffsetZ" default="0.0"/>
   <arg name="twoWayDrive" default="false"/>             # 是否支持前进后退，默认值false
-  <arg name="maxSpeed" default="0.2"/>                  # 原值1.0
+  <arg name="maxSpeed" default="1.0"/>                  # 原值1.0
   <arg name="autonomyMode" default="false"/>
-  <arg name="autonomySpeed" default="0.2"/>             # 原值1.0
+  <arg name="autonomySpeed" default="1.0"/>             # 原值1.0
   <arg name="joyToSpeedDelay" default="2.0"/>
   <arg name="goalCloseDis" default="0.4"/>
   <arg name="goalX" default="0.0"/>
   <arg name="goalY" default="0.0"/>
   <arg name="goalZ" default="0.0"/>
   <arg name="is_real_robot" default="true"/>
-  <arg name="obstacleHeightThre" default="0.15"/>       # 原值0.15，在0.2m*0.2m的格子范围内
+  <arg name="obstacleHeightThre" default="0.15"/>       # 原值0.15，在0.2m*0.2m的格子范围内,设置为超过楼梯高度
   <arg name="groundHeightThre" default="0.1"/>          # 原值0.1
-  <arg name="costHeightThre" default="0.1"/>            # 局部路径高度惩罚调节系数，值越小，相同的高度差会产生更大的惩罚
+  <arg name="costHeightThre" default="0.1"/>            # 原值0.1，局部路径高度惩罚调节系数，值越小，相同的高度差会产生更大的惩罚，
   <arg name="use3DMode" default="false"/>               # 是否启用3d模式
 
   <node pkg="local_planner" exec="localPlanner" name="localPlanner" output="screen">

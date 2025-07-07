@@ -3,6 +3,7 @@
   <arg name="minRelZ" default="-1.5"/>              # 用于第一步过滤，这个范围通常会比vehicleHeight大
   <arg name="maxRelZ" default="0.5"/>
   <arg name="noDataObstacle" default="true"/>
+  <arg name="noDecayDis" default="0.0"/>            
 
   <arg name="noDataAreaMinX" default="0.3"/>
   <arg name="noDataAreaMaxX" default="1.8"/>
@@ -14,7 +15,7 @@
   <node pkg="terrain_analysis" exec="terrainAnalysis" name="terrainAnalysis" output="screen">
     <param name="scanVoxelSize" value="0.05" />
     <param name="decayTime" value="2.0" />
-    <param name="noDecayDis" value="0.0" />
+    <param name="noDecayDis" value="$(var noDecayDis)" />           # 原值0.0,移动距离要大于这个距离，才会启动noDataObstacle判断
     <param name="clearingDis" value="8.0" />
     <param name="useSorting" value="true" />
     <param name="quantileZ" value="0.25" />
