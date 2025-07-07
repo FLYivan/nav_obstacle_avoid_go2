@@ -3,7 +3,8 @@
   <arg name="minRelZ" default="-1.5"/>              # 用于第一步过滤，这个范围通常会比vehicleHeight大
   <arg name="maxRelZ" default="0.5"/>
   <arg name="noDataObstacle" default="true"/>
-  <arg name="noDecayDis" default="0.0"/>            
+  <arg name="noDecayDis" default="0.0"/>    
+  <arg name="planarVoxelSize" default="0.2"/>       # 原值0.2，代表评估地面高度时，最小评估体素格的分辨率，值越小，评估颗粒度也越小
 
   <arg name="noDataAreaMinX" default="0.3"/>
   <arg name="noDataAreaMaxX" default="1.8"/>
@@ -44,6 +45,7 @@
     <param name="minRelZ" value="$(var minRelZ)" />                   # 以机器人（odom)中心为起点，点云处理的最小高度，原值-1.5
     <param name="maxRelZ" value="$(var maxRelZ)" />                    # 以机器人中心起点，点云处理的最大高度，原值0.5
     <param name="disRatioZ" value="0.2" />
+    <param name="planarVoxelSize" value="$(var planarVoxelSize)" />
   </node>
 
 </launch>

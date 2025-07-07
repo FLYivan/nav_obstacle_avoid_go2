@@ -237,6 +237,8 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("minRelZ", minRelZ);
   nh->declare_parameter<double>("maxRelZ", maxRelZ);
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
+  nh->declare_parameter<float>("planarVoxelSize", planarVoxelSize);
+
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
@@ -269,6 +271,9 @@ int main(int argc, char **argv) {
   nh->get_parameter("minRelZ", minRelZ);
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
+  nh->get_parameter("planarVoxelSize", planarVoxelSize);
+
+
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
@@ -675,8 +680,8 @@ int main(int argc, char **argv) {
                 planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
             point.y =
                 planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
-            point.z = vehicleZ;
-            point.intensity = vehicleHeight;
+            point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
+            point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
 
             point.x -= planarVoxelSize / 4.0;
             point.y -= planarVoxelSize / 4.0;
