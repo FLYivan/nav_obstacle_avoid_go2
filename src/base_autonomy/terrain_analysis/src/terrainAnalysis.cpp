@@ -128,7 +128,7 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
   vehicleYaw = yaw;
   vehicleX = odom->pose.pose.position.x;
   vehicleY = odom->pose.pose.position.y;
-  vehicleZ = odom->pose.pose.position.z;
+  // vehicleZ = odom->pose.pose.position.z;
 
   sinVehicleRoll = sin(vehicleRoll);
   cosVehicleRoll = cos(vehicleRoll);
@@ -173,13 +173,21 @@ void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laser
 
     float dis = sqrt((pointX - vehicleX) * (pointX - vehicleX) +
                      (pointY - vehicleY) * (pointY - vehicleY));
+    // 根据点的高度和距离进行过滤
+    // 1. 高度过滤: 点的相对高度(pointZ - vehicleZ)必须在一个动态范围内
+    //    - 最小高度: minRelZ - disRatioZ * dis (随距离增加而降低)
+    //    - 最大高度: maxRelZ + disRatioZ * dis (随距离增加而升高)
+    // 2. 距离过滤: 点到车辆的水平距离不能超过地形体素的最大范围
     if (pointZ - vehicleZ > minRelZ - disRatioZ * dis &&
         pointZ - vehicleZ < maxRelZ + disRatioZ * dis &&
         dis < terrainVoxelSize * (terrainVoxelHalfWidth + 1)) {
+      // 保存通过过滤的点
       point.x = pointX;
       point.y = pointY;
       point.z = pointZ;
+      // intensity记录该点的时间戳(相对于系统初始时间)
       point.intensity = laserCloudTime - systemInitTime;
+      // 将点加入裁剪后的点云
       laserCloudCrop->push_back(point);
     }
   }
@@ -238,6 +246,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("maxRelZ", maxRelZ);
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
   nh->declare_parameter<float>("planarVoxelSize", planarVoxelSize);
+  nh->declare_parameter<double>("vehicleZ", vehicleZ);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -272,6 +281,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
   nh->get_parameter("planarVoxelSize", planarVoxelSize);
+  nh->get_parameter("vehicleZ", vehicleZ);
 
 
 
@@ -562,7 +572,7 @@ int main(int argc, char **argv) {
                 limitGroundLift) {
               planarVoxelElev[i] = planarPointElev[i][0] + maxGroundLift;
             } else {
-              planarVoxelElev[i] = planarPointElev[i][quantileID];
+              planarVoxelElev[i] = planarPointElev[i][quantileID];  //9选择25%位置的点的高度作为这个体素的地面高度
             }
           }
         }
@@ -626,37 +636,47 @@ int main(int argc, char **argv) {
         }
       }
 
+      // 如果启用了无数据障碍物检测且无数据初始化完成
       if (noDataObstacle && noDataInited == 2) {
+        // 遍历所有平面体素
         for (int i = 0; i < planarVoxelNum; i++) {
           int indX = int(i / planarVoxelWidth);
           int indY = i % planarVoxelWidth;
 
+          // 计算体素在局部坐标系中的位置
           float pointX1 = planarVoxelSize * (indX - planarVoxelHalfWidth);
           float pointY1 = planarVoxelSize * (indY - planarVoxelHalfWidth);
 
+          // 将局部坐标转换到车辆坐标系
           float pointX2 = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
           float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
 
+          // 检查点是否在无数据区域内
           if (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY) {
             int planarPointElevSize = planarPointElev[i].size();
+            // 如果点数太少或高度太低,标记为边缘
             if (planarPointElevSize < minBlockPointNum || planarVoxelElev[i] - vehicleZ < maxElevBelowVeh) {
               planarVoxelEdge[i] = 1;
             }
           }
         }
 
+        // 对边缘进行多次扩展
         for (int noDataBlockSkipCount = 0;
              noDataBlockSkipCount < noDataBlockSkipNum;
              noDataBlockSkipCount++) {
+          // 遍历所有体素
           for (int i = 0; i < planarVoxelNum; i++) {
             if (planarVoxelEdge[i] >= 1) {
               int indX = int(i / planarVoxelWidth);
               int indY = i % planarVoxelWidth;
               bool edgeVoxel = false;
+              // 检查周围8个邻居体素
               for (int dX = -1; dX <= 1; dX++) {
                 for (int dY = -1; dY <= 1; dY++) {
                   if (indX + dX >= 0 && indX + dX < planarVoxelWidth &&
                       indY + dY >= 0 && indY + dY < planarVoxelWidth) {
+                    // 如果邻居体素的边缘值更小,则当前体素为边缘
                     if (planarVoxelEdge[planarVoxelWidth * (indX + dX) + indY +
                                         dY] < planarVoxelEdge[i]) {
                       edgeVoxel = true;
@@ -665,17 +685,24 @@ int main(int argc, char **argv) {
                 }
               }
 
+              // 如果不是边缘体素,增加边缘计数
               if (!edgeVoxel)
                 planarVoxelEdge[i]++;
             }
           }
         }
+        
+        // 初始边缘体素（边缘值=1）：标记出可能有风险的区域
+        // 边缘值的扩展：通过多次迭代，识别出无数据区域的"内部"
+        // 最终只在边缘值较大的体素中添加虚拟障碍点：
 
+        // 为边缘体素添加虚拟障碍点
         for (int i = 0; i < planarVoxelNum; i++) {
           if (planarVoxelEdge[i] > noDataBlockSkipNum) {
             int indX = int(i / planarVoxelWidth);
             int indY = i % planarVoxelWidth;
 
+            // 计算体素中心点坐标
             point.x =
                 planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
             point.y =
@@ -683,6 +710,7 @@ int main(int argc, char **argv) {
             point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
             point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
 
+            // 在体素内添加4个点形成正方形
             point.x -= planarVoxelSize / 4.0;
             point.y -= planarVoxelSize / 4.0;
             terrainCloudElev->push_back(point);

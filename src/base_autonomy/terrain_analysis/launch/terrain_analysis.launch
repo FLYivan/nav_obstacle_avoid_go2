@@ -5,12 +5,14 @@
   <arg name="noDataObstacle" default="true"/>
   <arg name="noDecayDis" default="0.0"/>    
   <arg name="planarVoxelSize" default="0.2"/>       # 原值0.2，代表评估地面高度时，最小评估体素格的分辨率，值越小，评估颗粒度也越小
+  <arg name="vehicleZ" default="0.0"/>              # 机器人odom坐标系相对于地面的高度，单位：米 
 
   <arg name="noDataAreaMinX" default="0.3"/>
   <arg name="noDataAreaMaxX" default="1.8"/>
   <arg name="noDataAreaMinY" default="-0.9"/>
   <arg name="noDataAreaMaxY" default="0.9"/>
-
+  <arg name="maxElevBelowVeh" default="-0.6"/>      # 无点云区域的高度阈值，低于这个高度的点云被认为是无效点
+  
 
 
   <node pkg="terrain_analysis" exec="terrainAnalysis" name="terrainAnalysis" output="screen">
@@ -34,7 +36,7 @@
     <param name="noDataObstacle" value="$(var noDataObstacle)" />            # 是否把无点云的位置定义为障碍物（如向下楼梯，坑洞）     
     <param name="noDataBlockSkipNum" value="0" />
     <param name="minBlockPointNum" value="10" />
-    <param name="maxElevBelowVeh" value="-0.6" />
+    <param name="maxElevBelowVeh" value="$(var maxElevBelowVeh)" />
     <param name="noDataAreaMinX" value="$(var noDataAreaMinX)" />                             # 以机器人中心为原点
     <param name="noDataAreaMaxX" value="$(var noDataAreaMaxX)" />
     <param name="noDataAreaMinY" value="$(var noDataAreaMinY)" />
@@ -46,6 +48,8 @@
     <param name="maxRelZ" value="$(var maxRelZ)" />                    # 以机器人中心起点，点云处理的最大高度，原值0.5
     <param name="disRatioZ" value="0.2" />
     <param name="planarVoxelSize" value="$(var planarVoxelSize)" />
+    <param name="vehicleZ" value="$(var vehicleZ)" />
+
   </node>
 
 </launch>
