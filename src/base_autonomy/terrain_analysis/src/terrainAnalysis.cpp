@@ -246,7 +246,6 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("maxRelZ", maxRelZ);
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
   nh->declare_parameter<float>("planarVoxelSize", planarVoxelSize);
-  nh->declare_parameter<double>("vehicleZ", vehicleZ);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -281,7 +280,6 @@ int main(int argc, char **argv) {
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
   nh->get_parameter("planarVoxelSize", planarVoxelSize);
-  nh->get_parameter("vehicleZ", vehicleZ);
 
 
 
