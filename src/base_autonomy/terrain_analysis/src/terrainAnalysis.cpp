@@ -130,7 +130,7 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
   vehicleYaw = yaw;
   vehicleX = odom->pose.pose.position.x;
   vehicleY = odom->pose.pose.position.y;
-  vehicleZ = odom->pose.pose.position.z;
+  vehicleZ = odom->pose.pose.position.z;       // odom的z方向原点就是雷达的原点，距离实际地平面存在一定高度差
 
   sinVehicleRoll = sin(vehicleRoll);
   cosVehicleRoll = cos(vehicleRoll);
