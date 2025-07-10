@@ -12,7 +12,8 @@
   <arg name="noDataAreaMaxY" default="0.9"/>
   <arg name="maxElevBelowVeh" default="-0.6"/>      # 无点云区域的高度阈值，低于这个高度的点云被认为是无效点
   <arg name="minBlockPointNum" default="10"/>       # 体素内点云数量阈值，低于这个数量的体素被认为是无效点
-
+  <arg name="maxBlockPointNum" default="0"/>        # 最大体素点云数量阈值，大于这个数量的体素被认为是无效点
+  <arg name="terrainMinPointNum" default="10"/>     # 地形可靠性判断的点云数量阈值，低于这个数量的体素被认为是无效点
 
   <node pkg="terrain_analysis" exec="terrainAnalysis" name="terrainAnalysis" output="screen">
     <param name="scanVoxelSize" value="0.05" />
@@ -35,6 +36,8 @@
     <param name="noDataObstacle" value="$(var noDataObstacle)" />            # 是否把无点云的位置定义为障碍物（如向下楼梯，坑洞）     
     <param name="noDataBlockSkipNum" value="0" />
     <param name="minBlockPointNum" value="$(var minBlockPointNum)" />
+    <param name="terrainMinPointNum" value="$(var terrainMinPointNum)" />
+    <param name="maxBlockPointNum" value="$(var maxBlockPointNum)" />
     <param name="maxElevBelowVeh" value="$(var maxElevBelowVeh)" />
     <param name="noDataAreaMinX" value="$(var noDataAreaMinX)" />                             # 以机器人中心为原点
     <param name="noDataAreaMaxX" value="$(var noDataAreaMaxX)" />

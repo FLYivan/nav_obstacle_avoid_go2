@@ -54,6 +54,8 @@ int minDyObsPointNum = 1;
 bool noDataObstacle = false;
 int noDataBlockSkipNum = 0;
 int minBlockPointNum = 10;
+int maxBlockPointNum = 0;
+int terrainMinPointNum = 10;
 double maxElevBelowVeh = -0.6;
 double noDataAreaMinX = 0.3;
 double noDataAreaMaxX = 1.8;
@@ -234,6 +236,8 @@ int main(int argc, char **argv) {
   nh->declare_parameter<bool>("noDataObstacle", noDataObstacle);
   nh->declare_parameter<int>("noDataBlockSkipNum", noDataBlockSkipNum);
   nh->declare_parameter<int>("minBlockPointNum", minBlockPointNum);
+  nh->declare_parameter<int>("maxBlockPointNum", maxBlockPointNum);
+  nh->declare_parameter<int>("terrainMinPointNum", terrainMinPointNum);
   nh->declare_parameter<double>("maxElevBelowVeh", maxElevBelowVeh);
   nh->declare_parameter<double>("noDataAreaMinX", noDataAreaMinX);
   nh->declare_parameter<double>("noDataAreaMaxX", noDataAreaMaxX);
@@ -268,6 +272,8 @@ int main(int argc, char **argv) {
   nh->get_parameter("noDataObstacle", noDataObstacle);
   nh->get_parameter("noDataBlockSkipNum", noDataBlockSkipNum);
   nh->get_parameter("minBlockPointNum", minBlockPointNum);
+  nh->get_parameter("maxBlockPointNum", maxBlockPointNum);
+  nh->get_parameter("terrainMinPointNum", terrainMinPointNum);
   nh->get_parameter("maxElevBelowVeh", maxElevBelowVeh);
   nh->get_parameter("noDataAreaMinX", noDataAreaMinX);
   nh->get_parameter("noDataAreaMaxX", noDataAreaMaxX);
@@ -623,7 +629,9 @@ int main(int argc, char **argv) {
               int planarPointElevSize =
                   planarPointElev[planarVoxelWidth * indX + indY].size();
               if (disZ >= 0 && disZ < vehicleHeight &&
-                  planarPointElevSize >= minBlockPointNum) {
+                //只有当这个点所在的体素格子中包含足够多的点云数据（大于等于terrainMinPointNum）时，
+                //我们才认为这个区域的地形信息是可靠的
+                  planarPointElevSize >= terrainMinPointNum) {
                 terrainCloudElev->push_back(point);
                 terrainCloudElev->points[terrainCloudElevSize].intensity = disZ;
 
@@ -652,8 +660,10 @@ int main(int argc, char **argv) {
           // 检查点是否在无数据区域内
           if (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY) {
             int planarPointElevSize = planarPointElev[i].size();
-            // 如果点数太少或高度太低,标记为边缘
-            if (planarPointElevSize < minBlockPointNum || planarVoxelElev[i] - vehicleZ < maxElevBelowVeh) {
+            // 1、点云数据小于阈值
+            // 2、有点云数据时，高度小于阈值
+            if (planarPointElevSize < minBlockPointNum || 
+                (planarPointElevSize > maxBlockPointNum && planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
               planarVoxelEdge[i] = 1;
             }
           }
