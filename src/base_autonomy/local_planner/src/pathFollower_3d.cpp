@@ -78,6 +78,8 @@ double joyToSpeedDelay = 2.0;
 double goalCloseDis = 1.0;
 bool is_real_robot = false;
 
+double stopDisThre_Z = 0.05;  // Z轴方向停止阈值，可以根据实际需求调整
+
 float joySpeed = 0;
 float joySpeedRaw = 0;
 float joyYaw = 0;
@@ -247,6 +249,7 @@ int main(int argc, char** argv)
   nh->declare_parameter<double>("joyToSpeedDelay", joyToSpeedDelay);
   nh->declare_parameter<double>("goalCloseDis", goalCloseDis);
   nh->declare_parameter<bool>("is_real_robot", is_real_robot);
+  nh->declare_parameter<double>("stopDisThre_Z", stopDisThre_Z);
 
   nh->get_parameter("sensorOffsetX", sensorOffsetX);
   nh->get_parameter("sensorOffsetY", sensorOffsetY);
@@ -280,6 +283,7 @@ int main(int argc, char** argv)
   nh->get_parameter("joyToSpeedDelay", joyToSpeedDelay);
   nh->get_parameter("goalCloseDis", goalCloseDis);
   nh->get_parameter("is_real_robot", is_real_robot);
+  nh->get_parameter("stopDisThre_Z", stopDisThre_Z);
 
   auto subOdom = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odomHandler);
 
@@ -315,11 +319,14 @@ int main(int argc, char** argv)
                         + sin(vehicleYawRec) * (vehicleY - vehicleYRec);
       float vehicleYRel = -sin(vehicleYawRec) * (vehicleX - vehicleXRec) 
                         + cos(vehicleYawRec) * (vehicleY - vehicleYRec);
+      float vehicleZRel = vehicleZ - vehicleZRec;  // Z轴相对位置
 
       int pathSize = path.poses.size();
       float endDisX = path.poses[pathSize - 1].pose.position.x - vehicleXRel;
       float endDisY = path.poses[pathSize - 1].pose.position.y - vehicleYRel;
-      float endDis = sqrt(endDisX * endDisX + endDisY * endDisY);
+      float endDisZ = path.poses[pathSize - 1].pose.position.z - vehicleZRel;  // 添加Z轴距离计算
+      float endDisXY = sqrt(endDisX * endDisX + endDisY * endDisY);  // XY平面距离
+      float endDisZ_abs = fabs(endDisZ);  // Z轴距离的绝对值
 
       float disX, disY, dis;
       while (pathPointID < pathSize - 1) {
@@ -368,11 +375,13 @@ int main(int argc, char** argv)
       if (vehicleYawRate > maxYawRate * PI / 180.0) vehicleYawRate = maxYawRate * PI / 180.0;
       else if (vehicleYawRate < -maxYawRate * PI / 180.0) vehicleYawRate = -maxYawRate * PI / 180.0;
 
+      // 修改停止判断条件，增加Z轴方向的判断
       if (joySpeed2 == 0 && !autonomyMode) {
         vehicleYawRate = maxYawRate * joyYaw * PI / 180.0;
-      } else if (pathSize <= 1 || (dis < stopDisThre && noRotAtGoal)) {
+      } else if (pathSize <= 1 || (endDisXY < stopDisThre && endDisZ_abs < stopDisThre_Z && noRotAtGoal)) {
         vehicleYawRate = 0;
       }
+
 
       if (pathSize <= 1) {
         joySpeed2 = 0;
