@@ -658,13 +658,31 @@ int main(int argc, char **argv) {
           float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
 
           // 检查点是否在无数据区域内
-          if (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY) {
+          if (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && 
+              pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY) {
             int planarPointElevSize = planarPointElev[i].size();
+            
+            // 添加调试日志
+            RCLCPP_INFO(nh->get_logger(), 
+                "Voxel at (%.2f, %.2f): pointNum=%d, heightDiff=%.2f, maxElevBelowVeh=%.2f", 
+                pointX2, pointY2, 
+                planarPointElevSize,
+                planarVoxelElev[i] - vehicleZ,
+                maxElevBelowVeh);
+
             // 1、点云数据小于阈值
             // 2、有点云数据时，高度小于阈值
             if (planarPointElevSize < minBlockPointNum || 
-                (planarPointElevSize > maxBlockPointNum && planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
-              planarVoxelEdge[i] = 1;
+                (planarPointElevSize > maxBlockPointNum && 
+                 planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
+                planarVoxelEdge[i] = 1;
+                
+                // 添加生成虚拟障碍物的日志
+                RCLCPP_INFO(nh->get_logger(), 
+                    "Virtual obstacle generated: condition1=%s, condition2=%s", 
+                    (planarPointElevSize < minBlockPointNum) ? "true" : "false",
+                    (planarPointElevSize > maxBlockPointNum && 
+                     planarVoxelElev[i] - vehicleZ < maxElevBelowVeh) ? "true" : "false");
             }
           }
         }
