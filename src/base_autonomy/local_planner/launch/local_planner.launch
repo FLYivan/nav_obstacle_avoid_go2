@@ -16,6 +16,7 @@
   <arg name="obstacleHeightThre" default="0.15"/>       # 原值0.15，在0.2m*0.2m的格子范围内,设置为超过楼梯高度
   <arg name="groundHeightThre" default="0.1"/>          # 原值0.1
   <arg name="costHeightThre" default="0.1"/>            # 原值0.1，局部路径高度惩罚调节系数，值越小，相同的高度差会产生更大的惩罚，
+  <arg name="minPathRange" default="1.0"/>              # 虚拟障碍物探测的最小范围
   <arg name="use3DMode" default="false"/>               # 是否启用3d模式
 
   <node pkg="local_planner" exec="localPlanner" name="localPlanner" output="screen">
@@ -47,7 +48,7 @@
     <param name="minPathScale" value="0.5" />
     <param name="pathScaleStep" value="0.25" />
     <param name="pathScaleBySpeed" value="true" />
-    <param name="minPathRange" value="1.0" />
+    <param name="minPathRange" value="$(var minPathRange)" />
     <param name="pathRangeStep" value="0.5" />
     <param name="pathRangeBySpeed" value="true" />
     <param name="pathCropByGoal" value="true" />
