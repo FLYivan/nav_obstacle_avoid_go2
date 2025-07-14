@@ -327,6 +327,9 @@ int main(int argc, char** argv)
       float endDisZ = path.poses[pathSize - 1].pose.position.z - vehicleZRel;  // 添加Z轴距离计算
       float endDisXY = sqrt(endDisX * endDisX + endDisY * endDisY);  // XY平面距离
       float endDisZ_abs = fabs(endDisZ);  // Z轴距离的绝对值
+      
+      RCLCPP_INFO(nh->get_logger(), "停止条件检查 - XY平面距离: %.2f (阈值:%.2f), Z轴距离: %.2f (阈值:%.2f)", 
+                 endDisXY, stopDisThre, endDisZ_abs, stopDisThre_Z);
 
       float disX, disY, dis;
       while (pathPointID < pathSize - 1) {

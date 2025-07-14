@@ -212,6 +212,12 @@ void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis) {
   clearingCloud = true;
 }
 
+// 首先定义机器人本体区域的参数（可以放在类的成员变量中）
+double robotBodyMinX = -0.6;  // 机器人本体后方边界（本体长度0.6m的一半）
+double robotBodyMaxX = 0.1;   // 机器人本体前方边界
+double robotBodyMinY = -0.2;  // 机器人本体左侧边界（本体宽度0.4m的一半）
+double robotBodyMaxY = 0.2;   // 机器人本体右侧边界
+
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysis");
@@ -660,29 +666,23 @@ int main(int argc, char **argv) {
           // 检查点是否在无数据区域内
           if (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && 
               pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY) {
-            int planarPointElevSize = planarPointElev[i].size();
             
-            // 添加调试日志
-            // RCLCPP_INFO(nh->get_logger(), 
-            //     "Voxel at (%.2f, %.2f): pointNum=%d, heightDiff=%.2f, maxElevBelowVeh=%.2f", 
-            //     pointX2, pointY2, 
-            //     planarPointElevSize,
-            //     planarVoxelElev[i] - vehicleZ,
-            //     maxElevBelowVeh);
+            // 添加机器人本体区域的排除判断
+            bool isInRobotBody = (pointX2 > robotBodyMinX && pointX2 < robotBodyMaxX && 
+                                 pointY2 > robotBodyMinY && pointY2 < robotBodyMaxY);
+            
+            // 只有不在机器人本体区域内的点才进行处理
+            if (!isInRobotBody) {
+                int planarPointElevSize = planarPointElev[i].size();
 
-            // 1、点云数据小于阈值
-            // 2、有点云数据时，高度小于阈值
-            if (planarPointElevSize < minBlockPointNum || 
-                (planarPointElevSize > maxBlockPointNum && 
-                 planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
-                planarVoxelEdge[i] = 1;
-                
-                // 添加生成虚拟障碍物的日志
-                // RCLCPP_INFO(nh->get_logger(), 
-                //     "Virtual obstacle generated: condition1=%s, condition2=%s", 
-                //     (planarPointElevSize < minBlockPointNum) ? "true" : "false",
-                //     (planarPointElevSize > maxBlockPointNum && 
-                //      planarVoxelElev[i] - vehicleZ < maxElevBelowVeh) ? "true" : "false");
+                // 1、点云数据小于阈值
+                // 2、有点云数据时，高度小于阈值
+                if (planarPointElevSize < minBlockPointNum || 
+                    (planarPointElevSize > maxBlockPointNum && 
+                     planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
+                    planarVoxelEdge[i] = 1;
+                    
+                }
             }
           }
         }

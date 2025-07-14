@@ -17,6 +17,8 @@
   <arg name="groundHeightThre" default="0.1"/>          # 原值0.1
   <arg name="costHeightThre" default="0.1"/>            # 原值0.1，局部路径高度惩罚调节系数，值越小，相同的高度差会产生更大的惩罚，
   <arg name="minPathRange" default="1.0"/>              # 虚拟障碍物探测的最小范围
+  <arg name="stopDisThre_Z" default="0.05"/>            # 原值0.05，Z轴方向停止阈值，可以根据实际需求调整
+  <arg name="stopDisThre" default="0.3"/>               # 原值0.3，x-y方向减速阈值，可以根据实际需求调整
   <arg name="use3DMode" default="false"/>               # 是否启用3d模式
 
   <node pkg="local_planner" exec="localPlanner" name="localPlanner" output="screen">
@@ -78,7 +80,8 @@
     <param name="dirDiffThre" value="0.4" />
     <param name="omniDirDiffThre" value="1.5" />
     <param name="noRotSpeed" value="10.0"/>
-    <param name="stopDisThre" value="0.3" />
+    <param name="stopDisThre" value="$(var stopDisThre)" />
+    <param name="stopDisThre_Z" value="$(var stopDisThre_Z)" />
     <param name="slowDwnDisThre" value="0.75" />
     <param name="useInclRateToSlow" value="false" />
     <param name="inclRateThre" value="120.0" />
