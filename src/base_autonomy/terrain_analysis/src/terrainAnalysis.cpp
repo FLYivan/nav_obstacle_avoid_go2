@@ -663,12 +663,12 @@ int main(int argc, char **argv) {
             int planarPointElevSize = planarPointElev[i].size();
             
             // 添加调试日志
-            RCLCPP_INFO(nh->get_logger(), 
-                "Voxel at (%.2f, %.2f): pointNum=%d, heightDiff=%.2f, maxElevBelowVeh=%.2f", 
-                pointX2, pointY2, 
-                planarPointElevSize,
-                planarVoxelElev[i] - vehicleZ,
-                maxElevBelowVeh);
+            // RCLCPP_INFO(nh->get_logger(), 
+            //     "Voxel at (%.2f, %.2f): pointNum=%d, heightDiff=%.2f, maxElevBelowVeh=%.2f", 
+            //     pointX2, pointY2, 
+            //     planarPointElevSize,
+            //     planarVoxelElev[i] - vehicleZ,
+            //     maxElevBelowVeh);
 
             // 1、点云数据小于阈值
             // 2、有点云数据时，高度小于阈值
@@ -678,11 +678,11 @@ int main(int argc, char **argv) {
                 planarVoxelEdge[i] = 1;
                 
                 // 添加生成虚拟障碍物的日志
-                RCLCPP_INFO(nh->get_logger(), 
-                    "Virtual obstacle generated: condition1=%s, condition2=%s", 
-                    (planarPointElevSize < minBlockPointNum) ? "true" : "false",
-                    (planarPointElevSize > maxBlockPointNum && 
-                     planarVoxelElev[i] - vehicleZ < maxElevBelowVeh) ? "true" : "false");
+                // RCLCPP_INFO(nh->get_logger(), 
+                //     "Virtual obstacle generated: condition1=%s, condition2=%s", 
+                //     (planarPointElevSize < minBlockPointNum) ? "true" : "false",
+                //     (planarPointElevSize > maxBlockPointNum && 
+                //      planarVoxelElev[i] - vehicleZ < maxElevBelowVeh) ? "true" : "false");
             }
           }
         }
