@@ -218,6 +218,10 @@ double robotBodyMaxX = 0.1;   // 机器人本体前方边界
 double robotBodyMinY = -0.2;  // 机器人本体左侧边界（本体宽度0.4m的一半）
 double robotBodyMaxY = 0.2;   // 机器人本体右侧边界
 
+// 添加俯仰角阈值参数（可以放在类的成员变量中）
+double maxPitchAngle = 0.1;  // 单位：弧度，大约5.7度
+double minPitchAngle = -0.1; // 单位：弧度，大约-5.7度
+
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysis");
@@ -256,6 +260,8 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("maxRelZ", maxRelZ);
   nh->declare_parameter<double>("disRatioZ", disRatioZ);
   nh->declare_parameter<float>("planarVoxelSize", planarVoxelSize);
+  nh->declare_parameter<double>("maxPitchAngle", maxPitchAngle);
+  nh->declare_parameter<double>("minPitchAngle", minPitchAngle);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -292,8 +298,8 @@ int main(int argc, char **argv) {
   nh->get_parameter("maxRelZ", maxRelZ);
   nh->get_parameter("disRatioZ", disRatioZ);
   nh->get_parameter("planarVoxelSize", planarVoxelSize);
-
-
+  nh->get_parameter("maxPitchAngle", maxPitchAngle);
+  nh->get_parameter("minPitchAngle", minPitchAngle);
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
@@ -675,13 +681,14 @@ int main(int argc, char **argv) {
             if (!isInRobotBody) {
                 int planarPointElevSize = planarPointElev[i].size();
 
-                // 1、点云数据小于阈值
-                // 2、有点云数据时，高度小于阈值
-                if (planarPointElevSize < minBlockPointNum || 
+                // 判断是否在平地（使用已有的vehiclePitch变量）
+                bool isOnFlatGround = (vehiclePitch > minPitchAngle && vehiclePitch < maxPitchAngle);
+
+                // 1、在平地时才考虑点云数量条件，或者2、有点云数据时的高度条件
+                if ((isOnFlatGround && planarPointElevSize < minBlockPointNum) || 
                     (planarPointElevSize > maxBlockPointNum && 
                      planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
                     planarVoxelEdge[i] = 1;
-                    
                 }
             }
           }

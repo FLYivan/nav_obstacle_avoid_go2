@@ -14,6 +14,8 @@
   <arg name="minBlockPointNum" default="10"/>       # 体素内点云数量阈值，低于这个数量的体素被认为是无效点
   <arg name="maxBlockPointNum" default="0"/>        # 最大体素点云数量阈值，大于这个数量的体素被认为是无效点
   <arg name="terrainMinPointNum" default="10"/>     # 地形可靠性判断的点云数量阈值，低于这个数量的体素被认为是无效点
+  <arg name="maxPitchAngle" default="0.1"/>        # 最大俯仰角阈值，大于这个角度的点云被认为是无效点
+  <arg name="minPitchAngle" default="-0.1"/>       # 最小俯仰角阈值，小于这个角度的点云被认为是无效点
 
   <node pkg="terrain_analysis" exec="terrainAnalysis" name="terrainAnalysis" output="screen">
     <param name="scanVoxelSize" value="0.05" />
@@ -50,7 +52,8 @@
     <param name="maxRelZ" value="$(var maxRelZ)" />                    # 以机器人中心起点，点云处理的最大高度，原值0.5
     <param name="disRatioZ" value="0.2" />
     <param name="planarVoxelSize" value="$(var planarVoxelSize)" />
-
+    <param name="maxPitchAngle" value="$(var maxPitchAngle)" />
+    <param name="minPitchAngle" value="$(var minPitchAngle)" />
 
   </node>
 
