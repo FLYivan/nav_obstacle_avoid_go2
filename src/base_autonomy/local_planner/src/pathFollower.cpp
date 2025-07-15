@@ -153,7 +153,7 @@ void pathHandler(const nav_msgs::msg::Path::ConstSharedPtr pathIn)
     path.poses[i].pose.position.z = pathIn->poses[i].pose.position.z;
   }
 
-  vehicleXRec = vehicleX;
+  vehicleXRec = vehicleX;               // 记录在接收路径时刻，机器人的X,Y,Z,Roll,Pitch,Yaw
   vehicleYRec = vehicleY;
   vehicleZRec = vehicleZ;
   vehicleRollRec = vehicleRoll;
@@ -327,8 +327,16 @@ int main(int argc, char** argv)
       float endDisZ = path.poses[pathSize - 1].pose.position.z - vehicleZRel;  // 添加Z轴距离计算
       float endDisXY = sqrt(endDisX * endDisX + endDisY * endDisY);  // XY平面距离
       float endDisZ_abs = fabs(endDisZ);  // Z轴距离的绝对值
-      
-      RCLCPP_INFO(nh->get_logger(), "停止条件检查 - XY平面距离: %.2f (阈值:%.2f), Z轴距离: %.2f (阈值:%.2f)", endDisXY, stopDisThre, endDisZ_abs, stopDisThre_Z);
+
+
+      RCLCPP_INFO(nh->get_logger(), "endDisXY分量 - endDisX: %.2f, endDisY: %.2f", endDisX, endDisY);
+
+      // RCLCPP_INFO(nh->get_logger(), "endDisX分量 - pathEndX: %.2f, vehicleXRel: %.2f", 
+      //             path.poses[pathSize - 1].pose.position.x, vehicleXRel);
+      // RCLCPP_INFO(nh->get_logger(), "endDisY分量 - pathEndY: %.2f, vehicleYRel: %.2f", 
+      //             path.poses[pathSize - 1].pose.position.y, vehicleYRel);
+
+      // RCLCPP_INFO(nh->get_logger(), "停止条件检查 - XY平面距离: %.2f (阈值:%.2f), Z轴距离: %.2f (阈值:%.2f)", endDisXY, stopDisThre, endDisZ_abs, stopDisThre_Z);
 
       float disX, disY, dis;
       while (pathPointID < pathSize - 1) {
