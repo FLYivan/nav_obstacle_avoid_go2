@@ -684,6 +684,9 @@ int main(int argc, char **argv) {
                 // 判断是否在平地（使用已有的vehiclePitch变量）
                 bool isOnFlatGround = (vehiclePitch > minPitchAngle && vehiclePitch < maxPitchAngle);
 
+                // RCLCPP_INFO(nh->get_logger(), "isOnFlatGround: %s", isOnFlatGround ? "true" : "false");
+               
+
                 // 1、在平地时才考虑点云数量条件，或者2、有点云数据时的高度条件
                 if ((isOnFlatGround && planarPointElevSize < minBlockPointNum) || 
                     (planarPointElevSize > maxBlockPointNum && 
