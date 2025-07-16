@@ -669,10 +669,22 @@ int main(int argc, char **argv) {
           float pointX2 = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
           float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
 
+          // 判断是否在平地（使用已有的vehiclePitch变量）
+          bool isOnFlatGround = (vehiclePitch > minPitchAngle && vehiclePitch < maxPitchAngle);
+
           // 检查点是否在无数据区域内
-          if (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && 
-              pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY) {
-            
+          bool isInValidArea;
+          if (isOnFlatGround) {
+              // 平地时使用完整的环形检测区域
+              isInValidArea = (pointX2 > noDataAreaMinX && pointX2 < noDataAreaMaxX && 
+                             pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY);
+          } else {
+              // 非平地时只检测左、右、后方区域
+              isInValidArea = (pointX2 > noDataAreaMinX && pointX2 < robotBodyMaxX && 
+                             pointY2 > noDataAreaMinY && pointY2 < noDataAreaMaxY);
+          }
+
+          if (isInValidArea) {
             // 添加机器人本体区域的排除判断
             bool isInRobotBody = (pointX2 > robotBodyMinX && pointX2 < robotBodyMaxX && 
                                  pointY2 > robotBodyMinY && pointY2 < robotBodyMaxY);
@@ -680,12 +692,6 @@ int main(int argc, char **argv) {
             // 只有不在机器人本体区域内的点才进行处理
             if (!isInRobotBody) {
                 int planarPointElevSize = planarPointElev[i].size();
-
-                // 判断是否在平地（使用已有的vehiclePitch变量）
-                bool isOnFlatGround = (vehiclePitch > minPitchAngle && vehiclePitch < maxPitchAngle);
-
-                // RCLCPP_INFO(nh->get_logger(), "isOnFlatGround: %s", isOnFlatGround ? "true" : "false");
-               
 
                 // 1、在平地时才考虑点云数量条件，或者2、有点云数据时的高度条件
                 if ((isOnFlatGround && planarPointElevSize < minBlockPointNum) || 

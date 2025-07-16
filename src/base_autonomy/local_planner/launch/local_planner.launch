@@ -8,7 +8,8 @@
   <arg name="autonomyMode" default="false"/>
   <arg name="autonomySpeed" default="1.0"/>             # 原值1.0
   <arg name="joyToSpeedDelay" default="2.0"/>
-  <arg name="goalCloseDis" default="0.4"/>
+  <arg name="goalCloseDis_XY" default="0.4"/>          # 原值0.4，当接近目标时，使用不同的评分策略来选择路径。
+  <arg name="goalCloseDis_Z" default="0.05"/>          # 原值0.05
   <arg name="goalX" default="0.0"/>
   <arg name="goalY" default="0.0"/>
   <arg name="goalZ" default="0.0"/>
@@ -20,6 +21,10 @@
   <arg name="stopDisThre_Z" default="0.05"/>            # 原值0.05，Z轴方向停止阈值，可以根据实际需求调整
   <arg name="stopDisThre" default="0.3"/>               # 原值0.3，x-y方向减速阈值，可以根据实际需求调整
   <arg name="use3DMode" default="false"/>               # 是否启用3d模式
+  <arg name="minPathScale" default="0.5"/>   
+  <arg name="pathScale" default="0.75"/>   
+  <arg name="adjacentRange" default="3.0"/>   
+
 
   <node pkg="local_planner" exec="localPlanner" name="localPlanner" output="screen">
     <param name="pathFolder" value="$(find-pkg-share local_planner)/paths" />
@@ -33,7 +38,7 @@
     <param name="useTerrainAnalysis" value="true" />
     <param name="checkObstacle" value="true" />
     <param name="checkRotObstacle" value="false" />
-    <param name="adjacentRange" value="3.0" /> 
+    <param name="adjacentRange" value="$(var adjacentRange)" /> 
     <param name="obstacleHeightThre" value="$(var obstacleHeightThre)" />        # 障碍物高度阈值，超过这个高度的点被标记为障碍物点
     <param name="groundHeightThre" value="$(var groundHeightThre)" />           # 大于这个阈值，认为是不平整的地形，会增加路径的惩罚值
     <param name="costHeightThre" value="$(var costHeightThre)" />             
@@ -46,8 +51,8 @@
     <param name="dirWeight" value="0.02" />
     <param name="dirThre" value="90.0" />
     <param name="dirToVehicle" value="false" />
-    <param name="pathScale" value="0.75" />
-    <param name="minPathScale" value="0.5" />
+    <param name="pathScale" value="$(var pathScale)" />
+    <param name="minPathScale" value="$(var minPathScale)" />
     <param name="pathScaleStep" value="0.25" />
     <param name="pathScaleBySpeed" value="true" />
     <param name="minPathRange" value="$(var minPathRange)" />
@@ -97,7 +102,8 @@
     <param name="autonomyMode" value="$(var autonomyMode)" />
     <param name="autonomySpeed" value="$(var autonomySpeed)" />
     <param name="joyToSpeedDelay" value="$(var joyToSpeedDelay)" />
-    <param name="goalCloseDis" value="$(var goalCloseDis)"/>
+    <param name="goalCloseDis_XY" value="$(var goalCloseDis_XY)"/>
+    <param name="goalCloseDis_Z" value="$(var goalCloseDis_Z)"/>
     <param name="is_real_robot" value="$(var is_real_robot)"/>
   </node>
 
