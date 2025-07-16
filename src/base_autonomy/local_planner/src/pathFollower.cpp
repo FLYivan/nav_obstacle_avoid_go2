@@ -329,7 +329,7 @@ int main(int argc, char** argv)
       float endDisZ_abs = fabs(endDisZ);  // Z轴距离的绝对值
 
 
-      RCLCPP_INFO(nh->get_logger(), "endDisXY分量 - endDisX: %.2f, endDisY: %.2f", endDisX, endDisY);
+      // RCLCPP_INFO(nh->get_logger(), "endDisXY分量 - endDisX: %.2f, endDisY: %.2f", endDisX, endDisY);
 
       // RCLCPP_INFO(nh->get_logger(), "endDisX分量 - pathEndX: %.2f, vehicleXRel: %.2f", 
       //             path.poses[pathSize - 1].pose.position.x, vehicleXRel);

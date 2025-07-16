@@ -694,7 +694,9 @@ int main(int argc, char **argv) {
                 int planarPointElevSize = planarPointElev[i].size();
 
                 // 1、在平地时才考虑点云数量条件，或者2、有点云数据时的高度条件
-                if ((isOnFlatGround && planarPointElevSize < minBlockPointNum) || 
+                if (
+                  (planarPointElevSize < minBlockPointNum) || 
+                  // (isOnFlatGround && planarPointElevSize < minBlockPointNum) || 
                     (planarPointElevSize > maxBlockPointNum && 
                      planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
                     planarVoxelEdge[i] = 1;
