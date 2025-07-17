@@ -67,7 +67,7 @@
             scan_bodyframe_pub_en: false  # true: output the point cloud scans in IMU-body-frame
 
         pcd_save:
-            pcd_save_en: false       # not save map to pcd file
-            # pcd_save_en: true       # save map to pcd file
+            # pcd_save_en: false       # not save map to pcd file
+            pcd_save_en: true       # save map to pcd file
             interval: -1            # how many LiDAR frames saved in each pcd file;  每个pcd文件保存的点云帧数
                                         # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
