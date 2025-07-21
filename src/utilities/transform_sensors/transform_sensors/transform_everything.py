@@ -137,28 +137,11 @@ class Repuber(Node):
         transformed_points = transformed_points.tolist()  # 将变换后的点转换为列表
 
 
-        # for i in range(len(transformed_points)):
-        #     # 只有当点有足够的字段时才尝试转换强度值
-        #     if len(transformed_points[i]) > 4:
-        #         try:
-        #             transformed_points[i][4] = int(transformed_points[i][4])
-        #         except (ValueError, TypeError):
-        #             # 如果转换失败，保持原值不变
-        #             pass
-                    
-        #     if self.is_in_filter_box(transformed_points[i]):
-        #         remove_list.append(i)
-
-
 
         for i in range(len(transformed_points)):  # 遍历所有变换后的点
             transformed_points[i][4] = int(transformed_points[i][4])  # 将点的强度值转换为整数
             if self.is_in_filter_box(transformed_points[i]):  # 检查点是否在过滤框内
                 remove_list.append(i)  # 如果在过滤框内，添加到待移除列表
-
-
-
-
 
 
         remove_list.sort(reverse=True)  # 反向排序待移除列表，以便从后向前删除
