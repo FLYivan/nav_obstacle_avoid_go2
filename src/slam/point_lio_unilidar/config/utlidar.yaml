@@ -10,7 +10,7 @@
 
         common:
             lid_topic: "/utlidar/transformed_cloud"  # 激光雷达话题
-            imu_topic: "/utlidar/transformed_imu"    # IMU话题
+            imu_topic: "/utlidar/transformed_imu"    # IMU话题 /utlidar/transformed_imu   /utlidar/transformed_raw_imu
             con_frame: false               # 是否需要将多个激光雷达帧合并为一个
             con_frame_num: 1               # 合并的帧数
             cut_frame: false               # 是否需要将一个激光雷达帧切分为多个子帧
