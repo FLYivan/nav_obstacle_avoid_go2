@@ -46,11 +46,12 @@
             fov_degree: 180.0              # 视场角度
             det_range: 100.0               # 检测范围
             gravity_align: false           # 世界坐标系的z轴是否与重力方向对齐
-            gravity: [0.0, 0.0, -9.81]       # 需要对齐的重力方向                   # 不太一致
+            gravity: [0.0, 0.0, -9.81]       # 需要对齐的重力方向                   # 不太一致 -9.81
             gravity_init: [0.0, 0.0, 0.0]  # 第一个IMU体坐标系中的预知重力值
             
             # IMU到激光雷达的转换
             extrinsic_T: [ 0.28945, 0.0 ,-0.046825]  # 平移向量
+            
             extrinsic_R: [  1.0, 0.0, 0.0,                # 旋转矩阵
                             0.0, 1.0, 0.0,
                             0.0, 0.0, 1.0 ]
@@ -59,7 +60,7 @@
             publish_odometry_without_downsample: true   # 发布未降采样的里程计数据
 
         publish:
-            path_en: true                # 是否发布路径输出
+            path_en: false                # 是否发布路径输出
             scan_publish_en: true          # 是否发布点云输出
             scan_bodyframe_pub_en: false   # 是否在IMU体坐标系中输出点云扫描
 

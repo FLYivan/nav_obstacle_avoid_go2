@@ -99,7 +99,7 @@ class Repuber(Node):
         self.body2imu_trans.transform.rotation.w = quat[3]  # 设置四元数W分量
         
         self.x_filter_min = -0.7
-        self.x_filter_max = -0.1                # 原值0.0       
+        self.x_filter_max =  -0.1               # 原值0.0       
         self.y_filter_min = -0.3
         self.y_filter_max = 0.3
         self.z_filter_min = -0.6 - self.cam_offset
