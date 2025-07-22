@@ -5,9 +5,9 @@ close all;
 %% generate path
 %{.
 dis = 1.0;
-angle = 27;
-deltaAngle = angle / 3;
-scale = 0.65;
+angle = 90;                    % 增大到90度，支持大角度转向 ，原值27
+deltaAngle = angle / 4;        % 改为angle/4，即22.5度增量，使路径更平滑，原值deltaAngle = angle / 3;
+scale = 0.85;                  % 增大到0.85，保持较大的转向能力，原值scale = 0.65;
 
 pathStartAll = zeros(4, 0);
 pathAll = zeros(5, 0);

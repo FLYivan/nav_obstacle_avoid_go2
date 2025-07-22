@@ -23,11 +23,6 @@ class Repuber(Node):
         self.cloud_sub = self.create_subscription(PointCloud2, '/utlidar/cloud', self.cloud_callback, 50)
        
 
-        # #订阅禾赛雷达+自身IMU
-        # self.imu_sub = self.create_subscription(Imu, '/hesai/imu', self.imu_callback, 50)
-        # self.cloud_sub = self.create_subscription(PointCloud2, '/hesai/lidar', self.cloud_callback, 50)
-
-
         self.imu_raw_pub = self.create_publisher(Imu, '/utlidar/transformed_raw_imu', 50)
         self.imu_pub = self.create_publisher(Imu, '/utlidar/transformed_imu', 50)
         self.cloud_pub = self.create_publisher(PointCloud2, '/utlidar/transformed_cloud', 50)

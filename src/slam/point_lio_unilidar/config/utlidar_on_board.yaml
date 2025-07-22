@@ -46,10 +46,10 @@
             fov_degree: 180.0              # 视场角度
             det_range: 100.0               # 检测范围
             gravity_align: false           # 世界坐标系的z轴是否与重力方向对齐
-            gravity: [0.0, 0.0, -9.81]       # 需要对齐的重力方向                   # 不太一致 -9.81
+            gravity: [0.0, 0.0, -9.81]       # 只有当gravity_align为true时，需要对齐的重力方向
             gravity_init: [0.0, 0.0, 0.0]  # 第一个IMU体坐标系中的预知重力值
             
-            # IMU到激光雷达的转换
+            # IMU到激光雷达的转换，激光雷达相对IMU坐标系的位置
             extrinsic_T: [ 0.28945, 0.0 ,-0.046825]  # 平移向量
             
             extrinsic_R: [  1.0, 0.0, 0.0,                # 旋转矩阵
