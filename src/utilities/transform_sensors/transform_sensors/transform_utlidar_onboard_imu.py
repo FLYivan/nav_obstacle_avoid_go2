@@ -174,6 +174,9 @@ class Repuber(Node):
             for id_to_remove in remove_list:
                 del transformed_points[id_to_remove]
             
+            # 将过滤后的点云转换回张量格式
+            transformed_points = torch.tensor(transformed_points, device='cuda',dtype=torch.float32)
+
             num_points = self.num_points
             downsampled_tensor = farthest_point_sampling(transformed_points, num_points).squeeze(0)
 

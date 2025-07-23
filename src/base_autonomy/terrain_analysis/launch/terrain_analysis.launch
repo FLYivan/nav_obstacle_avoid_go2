@@ -16,6 +16,7 @@
   <arg name="terrainMinPointNum" default="10"/>     # 地形可靠性判断的点云数量阈值，低于这个数量的体素被认为是无效点
   <arg name="maxPitchAngle" default="0.1"/>        # 最大俯仰角阈值，大于这个角度的点云被认为是无效点
   <arg name="minPitchAngle" default="-0.1"/>       # 最小俯仰角阈值，小于这个角度的点云被认为是无效点
+  <arg name="use_l1_go2IMU" default="true"/> 
 
   <node pkg="terrain_analysis" exec="terrainAnalysis" name="terrainAnalysis" output="screen">
     <param name="scanVoxelSize" value="0.05" />
@@ -54,6 +55,7 @@
     <param name="planarVoxelSize" value="$(var planarVoxelSize)" />
     <param name="maxPitchAngle" value="$(var maxPitchAngle)" />
     <param name="minPitchAngle" value="$(var minPitchAngle)" />
+    <param name="use_l1_go2IMU" value="$(var use_l1_go2IMU)" />
 
   </node>
 
