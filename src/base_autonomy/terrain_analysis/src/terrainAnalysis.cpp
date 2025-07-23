@@ -213,8 +213,8 @@ void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis) {
 }
 
 // 首先定义机器人本体区域的参数（可以放在类的成员变量中）
-double robotBodyMinX = -0.6;  // 机器人本体后方边界（本体长度0.6m的一半）
-double robotBodyMaxX = 0.2;   // 机器人本体前方边界
+double robotBodyMinX = -0.4;  // 机器人本体后方边界（本体长度0.6m的一半）
+double robotBodyMaxX = 0.4;   // 机器人本体前方边界
 double robotBodyMinY = -0.2;  // 机器人本体左侧边界（本体宽度0.4m的一半）
 double robotBodyMaxY = 0.2;   // 机器人本体右侧边界
 
