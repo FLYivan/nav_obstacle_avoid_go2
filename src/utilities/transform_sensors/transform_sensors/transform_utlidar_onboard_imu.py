@@ -127,9 +127,10 @@ class Repuber(Node):
         # 读取点云数据
         cloud_arr = pc2.read_points_list(data)
         points = np.array(cloud_arr)
-        
+
+        # GPU加速
         if self.use_gpu:
-            # GPU加速
+            
          
             # 转换为 PyTorch 张量，并指定 float32 类型
             points_tensor = torch.from_numpy(points).float().to('cuda')  # <--- 明确设置为 float32
@@ -151,6 +152,28 @@ class Repuber(Node):
             # 调整 Z 偏移
             transformed_points[:, 2] -= self.cam_offset
             transformed_points = torch.cat((transformed_points, tags), dim=1)
+
+            # 添加过滤框判断和点云移除
+            i = 0  # 初始化索引
+            remove_list = []  # 初始化待移除的点索引列表
+            transformed_points = transformed_points.tolist()  # 转换为列表以便处理
+
+            # 遍历所有点
+            for i in range(len(transformed_points)):
+                # 将点的强度值转换为整数
+                transformed_points[i][4] = int(transformed_points[i][4])
+                
+                # 使用已有的is_in_filter_box方法检查点是否在过滤框内
+                if self.is_in_filter_box(transformed_points[i]):
+                    remove_list.append(i)
+
+            # 反向排序待移除列表，以便从后向前删除
+            remove_list.sort(reverse=True)
+
+            # 移除过滤框内的点
+            for id_to_remove in remove_list:
+                del transformed_points[id_to_remove]
+            
             num_points = self.num_points
             downsampled_tensor = farthest_point_sampling(transformed_points, num_points).squeeze(0)
 
@@ -159,9 +182,8 @@ class Repuber(Node):
             
             elevated_cloud = pc2.create_cloud(data.header, data.fields, downsampled_points.tolist())
         
+        # 常规处理
         else:
-            # 常规处理
-            
             transform = self.body2cloud_trans.transform  # 获取身体到点云的变换
             mat = quat2mat(np.array([transform.rotation.w, transform.rotation.x, transform.rotation.y, transform.rotation.z]))  # 将四元数转换为旋转矩阵
             translation = np.array([transform.translation.x, transform.translation.y, transform.translation.z])  # 获取平移向量

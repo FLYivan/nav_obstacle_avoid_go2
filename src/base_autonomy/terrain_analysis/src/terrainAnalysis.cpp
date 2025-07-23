@@ -212,9 +212,11 @@ void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis) {
   clearingCloud = true;
 }
 
-// 首先定义机器人本体区域的参数（可以放在类的成员变量中）
-double robotBodyMinX = -0.4;  // 机器人本体后方边界（本体长度0.6m的一半）
-double robotBodyMaxX = 0.4;   // 机器人本体前方边界
+
+bool use_l1_go2IMU = true;  // 是否使用L1雷达+Go2的IMU，默认使用
+
+double robotBodyMinX = -0.4;  // 默认小尺寸
+double robotBodyMaxX = 0.4;
 double robotBodyMinY = -0.2;  // 机器人本体左侧边界（本体宽度0.4m的一半）
 double robotBodyMaxY = 0.2;   // 机器人本体右侧边界
 
@@ -262,6 +264,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<float>("planarVoxelSize", planarVoxelSize);
   nh->declare_parameter<double>("maxPitchAngle", maxPitchAngle);
   nh->declare_parameter<double>("minPitchAngle", minPitchAngle);
+  nh->declare_parameter<bool>("use_l1_go2IMU", use_l1_go2IMU);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -300,6 +303,16 @@ int main(int argc, char **argv) {
   nh->get_parameter("planarVoxelSize", planarVoxelSize);
   nh->get_parameter("maxPitchAngle", maxPitchAngle);
   nh->get_parameter("minPitchAngle", minPitchAngle);
+  nh->get_parameter("use_l1_go2IMU", use_l1_go2IMU);
+
+  // 根据参数设置机器人本体尺寸
+  if (use_l1_go2IMU) {
+      robotBodyMinX = -0.4;  // 本体后方边界（-0.4m）
+      robotBodyMaxX = 0.4;   // 本体前方边界（+0.4m）
+  } else {
+      robotBodyMinX = -0.6;  // 本体后方边界（-0.6m）
+      robotBodyMaxX = 0.2;   // 本体前方边界（+0.2m）
+  }
 
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
