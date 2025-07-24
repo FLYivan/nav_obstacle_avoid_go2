@@ -657,7 +657,9 @@ int main(int argc, char** argv)
   RCLCPP_INFO(nh->get_logger(), "Reading path files.");
 
   if (autonomyMode) {
+    RCLCPP_INFO(nh->get_logger(), "Before init - autonomySpeed: %.3f, maxSpeed: %.3f", autonomySpeed, maxSpeed);
     joySpeed = autonomySpeed / maxSpeed;        // =0.2/0.3=0.67
+    RCLCPP_INFO(nh->get_logger(), "After init - joySpeed: %.3f", joySpeed);
 
     if (joySpeed < 0) joySpeed = 0;
     else if (joySpeed > 1.0) joySpeed = 1.0;
@@ -696,6 +698,7 @@ int main(int argc, char** argv)
     rclcpp::spin_some(nh);
 
     if (newLaserCloud || newTerrainCloud) {
+      RCLCPP_INFO(nh->get_logger(), "Main loop - before processing joySpeed: %.3f", joySpeed);
       if (newLaserCloud) {
         newLaserCloud = false;
 
@@ -899,17 +902,17 @@ int main(int argc, char** argv)
 
       bool pathFound = false;
       float defPathScale = pathScale;
-      RCLCPP_INFO(nh->get_logger(), "Scale debug - defPathScale: %.3f, joySpeed: %.3f, minPathScale: %.3f", 
-                  defPathScale, joySpeed, minPathScale);
+      RCLCPP_INFO(nh->get_logger(), "Main loop - defPathScale: %.3f, joySpeed: %.3f", defPathScale, joySpeed);
       
       if (pathScaleBySpeed) {
           pathScale = defPathScale * joySpeed;
-          RCLCPP_INFO(nh->get_logger(), "Scale debug - after speed scale: %.3f", pathScale);
+          RCLCPP_INFO(nh->get_logger(), "Scale debug - after speed scale: %.3f (defPathScale: %.3f)", pathScale, defPathScale);
       }
       if (pathScale < minPathScale) {
           pathScale = minPathScale;
           RCLCPP_INFO(nh->get_logger(), "Scale debug - after min check: %.3f", pathScale);
       }
+      RCLCPP_INFO(nh->get_logger(), "Main loop - final pathScale: %.3f", pathScale);
 
       while (pathScale >= minPathScale && pathRange >= minPathRange) {
         for (int i = 0; i < 36 * pathNum; i++) {
