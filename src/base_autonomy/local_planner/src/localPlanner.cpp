@@ -657,7 +657,7 @@ int main(int argc, char** argv)
   RCLCPP_INFO(nh->get_logger(), "Reading path files.");
 
   if (autonomyMode) {
-    joySpeed = autonomySpeed / maxSpeed;
+    joySpeed = autonomySpeed / maxSpeed;        // =0.2/0.3=0.67
 
     if (joySpeed < 0) joySpeed = 0;
     else if (joySpeed > 1.0) joySpeed = 1.0;
@@ -899,8 +899,17 @@ int main(int argc, char** argv)
 
       bool pathFound = false;
       float defPathScale = pathScale;
-      if (pathScaleBySpeed) pathScale = defPathScale * joySpeed;
-      if (pathScale < minPathScale) pathScale = minPathScale;
+      RCLCPP_INFO(nh->get_logger(), "Scale debug - defPathScale: %.3f, joySpeed: %.3f, minPathScale: %.3f", 
+                  defPathScale, joySpeed, minPathScale);
+      
+      if (pathScaleBySpeed) {
+          pathScale = defPathScale * joySpeed;
+          RCLCPP_INFO(nh->get_logger(), "Scale debug - after speed scale: %.3f", pathScale);
+      }
+      if (pathScale < minPathScale) {
+          pathScale = minPathScale;
+          RCLCPP_INFO(nh->get_logger(), "Scale debug - after min check: %.3f", pathScale);
+      }
 
       while (pathScale >= minPathScale && pathRange >= minPathRange) {
         for (int i = 0; i < 36 * pathNum; i++) {
