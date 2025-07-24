@@ -331,8 +331,8 @@ int main(int argc, char** argv)
 
       // RCLCPP_INFO(nh->get_logger(), "endDisXY分量 - endDisX: %.2f, endDisY: %.2f", endDisX, endDisY);
 
-      RCLCPP_INFO(nh->get_logger(), "endDisX分量 - pathSize: %d, pathEndX: %.2f, vehicleXRel: %.2f", 
-                  pathSize, path.poses[pathSize - 1].pose.position.x, vehicleXRel);
+      // RCLCPP_INFO(nh->get_logger(), "endDisX分量 - pathSize: %d, pathEndX: %.2f, vehicleXRel: %.2f", 
+      //             pathSize, path.poses[pathSize - 1].pose.position.x, vehicleXRel);
       // RCLCPP_INFO(nh->get_logger(), "endDisY分量 - pathSize: %d, pathEndY: %.2f, vehicleYRel: %.2f", 
       //             pathSize, path.poses[pathSize - 1].pose.position.y, vehicleYRel);
 

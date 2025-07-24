@@ -706,7 +706,6 @@ int main(int argc, char** argv)
     rclcpp::spin_some(nh);
 
     if (newLaserCloud || newTerrainCloud) {
-      RCLCPP_INFO(nh->get_logger(), "Main loop - autonomyMode: %d", autonomyMode);
       if (newLaserCloud) {
         newLaserCloud = false;
 
@@ -848,7 +847,6 @@ int main(int argc, char** argv)
       if (pathRangeBySpeed) pathRange = adjacentRange * joySpeed;
       if (pathRange < minPathRange) pathRange = minPathRange;
       float relativeGoalDis = adjacentRange;
-      RCLCPP_INFO(nh->get_logger(), "Initial relativeGoalDis = %.3f (adjacentRange)", relativeGoalDis);
       float relativeGoalDisZ = 0.1;  // 初始化Z轴距离，用于3D导航
 
       if (autonomyMode) {
@@ -917,17 +915,13 @@ int main(int argc, char** argv)
 
       bool pathFound = false;
       float defPathScale = pathScale;
-      RCLCPP_INFO(nh->get_logger(), "Main loop - defPathScale: %.3f, joySpeed: %.3f", defPathScale, joySpeed);
       
       if (pathScaleBySpeed) {
           pathScale = defPathScale * joySpeed;
-          RCLCPP_INFO(nh->get_logger(), "Scale debug - after speed scale: %.3f (defPathScale: %.3f)", pathScale, defPathScale);
       }
       if (pathScale < minPathScale) {
           pathScale = minPathScale;
-          RCLCPP_INFO(nh->get_logger(), "Scale debug - after min check: %.3f", pathScale);
       }
-      RCLCPP_INFO(nh->get_logger(), "Main loop - final pathScale: %.3f", pathScale);
 
       while (pathScale >= minPathScale && pathRange >= minPathRange) {
         for (int i = 0; i < 36 * pathNum; i++) {
