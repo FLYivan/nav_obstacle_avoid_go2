@@ -1031,6 +1031,16 @@ int main(int argc, char** argv)
 
         float maxScore = 0;
         int selectedGroupID = -1;
+
+        // 36代表角度的划分：360度被分成了36份，每份10度
+        // 每个基础路径（groupID）都可以旋转到36个不同的方向
+        // 通过旋转，7个基础路径可以生成7 * 36 = 252个候选路径
+        
+        // rotDir是路径旋转方向的索引, 范围从0-35, 代表36个方向
+
+        // GroupID代表基础路径的索引, 范围从0-6, 代表7个基础路径
+        // 因此, i = 36 * GroupID + rotDir, 表示第GroupID个基础路径的第rotDir个方向
+
         for (int i = 0; i < 36 * groupNum; i++) {
           int rotDir = int(i / groupNum);
           float rotAng = (10.0 * rotDir - 180.0) * PI / 180;
@@ -1058,7 +1068,12 @@ int main(int argc, char** argv)
             float x = startPaths[selectedGroupID]->points[i].x;
             float y = startPaths[selectedGroupID]->points[i].y;
             float z = startPaths[selectedGroupID]->points[i].z;
-            
+
+            // 打印原始点的坐标
+            if (i == selectedPathLength - 1) {
+                RCLCPP_INFO(nh->get_logger(), "Original last point - x: %.3f, y: %.3f, z: %.3f", x, y, z);
+            }
+
             // 根据3D模式选择距离计算方式（与障碍物检测保持一致）
             float dis;
             if (use3DMode) {
@@ -1074,16 +1089,31 @@ int main(int argc, char** argv)
                 float rotX = cos(rotAng) * x - sin(rotAng) * y;
                 float rotY = sin(rotAng) * x + cos(rotAng) * y;
                 float rotZ = z;
+
+                // 打印旋转后的坐标
+                if (i == selectedPathLength - 1) {
+                    RCLCPP_INFO(nh->get_logger(), "After rotation last point - rotX: %.3f, rotY: %.3f, rotZ: %.3f", rotX, rotY, rotZ);
+                }
                 
                 // 保持相对于vehicle frame，不进行全局坐标变换
                 point.x = pathScale * rotX;
                 point.y = pathScale * rotY;
                 point.z = pathScale * rotZ;
+
+                // 打印缩放后的坐标
+                if (i == selectedPathLength - 1) {
+                    RCLCPP_INFO(nh->get_logger(), "After scale last point - point.x: %.3f, point.y: %.3f, point.z: %.3f", point.x, point.y, point.z);
+                }
               } else {
                 // 标准模式：仅Yaw变换（原始逻辑）
                 point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
                 point.y = pathScale * (sin(rotAng) * x + cos(rotAng) * y);
                 point.z = pathScale * z;
+
+                // 打印缩放后的坐标
+                if (i == selectedPathLength - 1) {
+                    RCLCPP_INFO(nh->get_logger(), "After scale last point - point.x: %.3f, point.y: %.3f, point.z: %.3f", point.x, point.y, point.z);
+                }
               }
               point.intensity = 1.0;
 
@@ -1091,17 +1121,27 @@ int main(int argc, char** argv)
               path.poses[i].pose.position.x = point.x;
               path.poses[i].pose.position.y = point.y;
               path.poses[i].pose.position.z = point.z;
+
+              // 打印存入path的坐标
+              if (i == selectedPathLength - 1) {
+                  RCLCPP_INFO(nh->get_logger(), "Final path last point - x: %.3f, y: %.3f, z: %.3f", 
+                             path.poses[i].pose.position.x,
+                             path.poses[i].pose.position.y,
+                             path.poses[i].pose.position.z);
+              }
             } else {
+              // 如果路径点超出范围，则跳出循环,将路径长度缩短到i
               path.poses.resize(i);
+              RCLCPP_INFO(nh->get_logger(), "Path truncated at point %d", i);
               break;
             }
           }
 
           // 在发布路径前添加打印
           RCLCPP_INFO(nh->get_logger(), "Path End Point - x: %.2f, y: %.2f, z: %.2f", 
-                      path.poses[selectedPathLength - 1].pose.position.x,
-                      path.poses[selectedPathLength - 1].pose.position.y,
-                      path.poses[selectedPathLength - 1].pose.position.z);
+                      path.poses[path.poses.size() - 1].pose.position.x,
+                      path.poses[path.poses.size() - 1].pose.position.y,
+                      path.poses[path.poses.size() - 1].pose.position.z);
 
           path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           path.header.frame_id = "vehicle";
