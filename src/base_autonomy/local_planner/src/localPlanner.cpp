@@ -252,11 +252,12 @@ void terrainCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr ter
   }
 }
 
+// waypoint_rviz_plugin/src/waypoint_tool_3d.cpp 中发布导航点时触发了joystickHandler，会发布joy消息
 void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
 {
   joyTime = nh->now().seconds();
-  joySpeedRaw = sqrt(joy->axes[3] * joy->axes[3] + joy->axes[4] * joy->axes[4]);
-  joySpeed = joySpeedRaw;
+  joySpeedRaw = sqrt(joy->axes[3] * joy->axes[3] + joy->axes[4] * joy->axes[4]); // axes[3] = 0 和 axes[4] = 1.0
+  joySpeed = joySpeedRaw;           // 因此 joySpeed = joySpeedRaw = 1.0, 发布导航点后，joySpeed被置为1
   if (joySpeed > 1.0) joySpeed = 1.0;
   if (joy->axes[4] == 0) joySpeed = 0;
 
@@ -270,7 +271,7 @@ void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
   if (joy->axes[2] > -0.1) {
     autonomyMode = false;
   } else {
-    autonomyMode = true;
+    autonomyMode = true;    // 每次收到joy消息时都会重新判断autonomyMode
   }
 
   if (joy->axes[5] > -0.1) {
@@ -287,11 +288,14 @@ void goalHandler(const geometry_msgs::msg::PointStamped::ConstSharedPtr goal)
   goalZ = goal->point.z;   // 处理Z坐标
 }
 
+
 void speedHandler(const std_msgs::msg::Float32::ConstSharedPtr speed)
 {
   double speedTime = nh->now().seconds();
+
+  // 只有当 joySpeedRaw == 0 时，speedHandler 才会更新 joySpeed
   if (autonomyMode && speedTime - joyTime > joyToSpeedDelay && joySpeedRaw == 0) {
-    joySpeed = speed->data / maxSpeed;
+    joySpeed = speed->data / maxSpeed;  
 
     if (joySpeed < 0) joySpeed = 0;
     else if (joySpeed > 1.0) joySpeed = 1.0;
@@ -627,6 +631,9 @@ int main(int argc, char** argv)
   nh->get_parameter("goalY", goalY);
   nh->get_parameter("goalZ", goalZ);
 
+  // 在初始化时打印
+  RCLCPP_INFO(nh->get_logger(), "Init - autonomyMode: %d", autonomyMode);
+
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
 
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
@@ -656,6 +663,7 @@ int main(int argc, char** argv)
 
   RCLCPP_INFO(nh->get_logger(), "Reading path files.");
 
+  // 只在节点初始化时执行，初始化时，没有发布导航点，autonomyMode为false
   if (autonomyMode) {
     RCLCPP_INFO(nh->get_logger(), "Before init - autonomySpeed: %.3f, maxSpeed: %.3f", autonomySpeed, maxSpeed);
     joySpeed = autonomySpeed / maxSpeed;        // =0.2/0.3=0.67
@@ -698,7 +706,7 @@ int main(int argc, char** argv)
     rclcpp::spin_some(nh);
 
     if (newLaserCloud || newTerrainCloud) {
-      RCLCPP_INFO(nh->get_logger(), "Main loop - before processing joySpeed: %.3f", joySpeed);
+      RCLCPP_INFO(nh->get_logger(), "Main loop - autonomyMode: %d", autonomyMode);
       if (newLaserCloud) {
         newLaserCloud = false;
 
@@ -840,6 +848,7 @@ int main(int argc, char** argv)
       if (pathRangeBySpeed) pathRange = adjacentRange * joySpeed;
       if (pathRange < minPathRange) pathRange = minPathRange;
       float relativeGoalDis = adjacentRange;
+      RCLCPP_INFO(nh->get_logger(), "Initial relativeGoalDis = %.3f (adjacentRange)", relativeGoalDis);
       float relativeGoalDisZ = 0.1;  // 初始化Z轴距离，用于3D导航
 
       if (autonomyMode) {
@@ -872,6 +881,9 @@ int main(int argc, char** argv)
           relativeGoalX = temp2X;
           relativeGoalY = temp2Y * cosVehicleRoll + temp2Z * sinVehicleRoll;
           relativeGoalZ = -temp2Y * sinVehicleRoll + temp2Z * cosVehicleRoll;
+
+          RCLCPP_INFO(nh->get_logger(), "3D mode - After transformation - relativeGoal: x=%.3f, y=%.3f, z=%.3f", 
+                      relativeGoalX, relativeGoalY, relativeGoalZ);
         } else {
           // 简化版本：仅进行Yaw旋转，适用于平地导航
           relativeGoalX = (deltaX * cosVehicleYaw + deltaY * sinVehicleYaw);
@@ -883,10 +895,13 @@ int main(int argc, char** argv)
         float relativeGoalDisXY = sqrt(relativeGoalX * relativeGoalX + relativeGoalY * relativeGoalY);
         relativeGoalDisZ = fabs(relativeGoalZ);
         
+        RCLCPP_INFO(nh->get_logger(), "Distance components - XY: %.3f, Z: %.3f", relativeGoalDisXY, relativeGoalDisZ);
+        
         // 更新relativeGoalDis：支持可配置的距离计算方式
         if (use3DMode) {
           // 复杂地形模式：使用3D欧几里得距离（适用于爬楼梯等场景）
           relativeGoalDis = sqrt(relativeGoalDisXY * relativeGoalDisXY + relativeGoalDisZ * relativeGoalDisZ);
+          RCLCPP_INFO(nh->get_logger(), "3D mode - Final relativeGoalDis: %.3f", relativeGoalDis);
         } else {
           // 标准模式：使用XY距离（适用于平地和一般导航）
           relativeGoalDis = relativeGoalDisXY;
