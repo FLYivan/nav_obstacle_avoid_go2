@@ -1047,6 +1047,10 @@ int main(int argc, char** argv)
           int rotDir = int(selectedGroupID / groupNum);
           float rotAng = (10.0 * rotDir - 180.0) * PI / 180;
 
+          // 打印路径选择信息
+          RCLCPP_INFO(nh->get_logger(), "Path Selection Info - GroupID: %d, RotDir: %d, RotAngle: %.2f degrees", 
+                      selectedGroupID % groupNum, rotDir, rotAng * 180.0 / PI);
+
           selectedGroupID = selectedGroupID % groupNum;
           int selectedPathLength = startPaths[selectedGroupID]->points.size();
           path.poses.resize(selectedPathLength);
@@ -1092,6 +1096,12 @@ int main(int argc, char** argv)
               break;
             }
           }
+
+          // 在发布路径前添加打印
+          RCLCPP_INFO(nh->get_logger(), "Path End Point - x: %.2f, y: %.2f, z: %.2f", 
+                      path.poses[selectedPathLength - 1].pose.position.x,
+                      path.poses[selectedPathLength - 1].pose.position.y,
+                      path.poses[selectedPathLength - 1].pose.position.z);
 
           path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           path.header.frame_id = "vehicle";
