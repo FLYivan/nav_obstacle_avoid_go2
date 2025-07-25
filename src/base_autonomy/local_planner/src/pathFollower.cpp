@@ -121,6 +121,8 @@ rclcpp::Node::SharedPtr nh;
 unitree_api::msg::Request req;
 SportClient sport_req;
 
+bool use3DMode = false; // 默认关闭3D模式，可根据需要改为true
+
 void odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odomIn)
 {
   odomTime = rclcpp::Time(odomIn->header.stamp).seconds();

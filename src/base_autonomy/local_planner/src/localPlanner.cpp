@@ -858,9 +858,9 @@ int main(int argc, char** argv)
         float deltaY = goalY - vehicleY;
         float deltaZ = goalZ - vehicleZ;
         
-        RCLCPP_INFO(nh->get_logger(), "目标点位置 - x: %.3f, y: %.3f, z: %.3f", goalX, goalY, goalZ);
-        RCLCPP_INFO(nh->get_logger(), "机器人位置 - x: %.3f, y: %.3f, z: %.3f", vehicleX, vehicleY, vehicleZ);
-        RCLCPP_INFO(nh->get_logger(), "到目标点的差值 - dx: %.3f, dy: %.3f, dz: %.3f", deltaX, deltaY, deltaZ);
+        // RCLCPP_INFO(nh->get_logger(), "目标点位置 - x: %.3f, y: %.3f, z: %.3f", goalX, goalY, goalZ);
+        // RCLCPP_INFO(nh->get_logger(), "机器人位置 - x: %.3f, y: %.3f, z: %.3f", vehicleX, vehicleY, vehicleZ);
+        // RCLCPP_INFO(nh->get_logger(), "到目标点的差值 - dx: %.3f, dy: %.3f, dz: %.3f", deltaX, deltaY, deltaZ);
         
         float relativeGoalX, relativeGoalY, relativeGoalZ;
         
@@ -887,8 +887,8 @@ int main(int argc, char** argv)
           relativeGoalY = temp2Y * cosVehicleRoll + temp2Z * sinVehicleRoll;
           relativeGoalZ = -temp2Y * sinVehicleRoll + temp2Z * cosVehicleRoll;
 
-          RCLCPP_INFO(nh->get_logger(), "3D模式 - 坐标变换后 - 相对目标位置: x=%.3f, y=%.3f, z=%.3f", 
-                      relativeGoalX, relativeGoalY, relativeGoalZ);
+          // RCLCPP_INFO(nh->get_logger(), "3D模式 - 坐标变换后 - 相对目标位置: x=%.3f, y=%.3f, z=%.3f", 
+          //             relativeGoalX, relativeGoalY, relativeGoalZ);
 
                       
         } else {
@@ -902,14 +902,14 @@ int main(int argc, char** argv)
         float relativeGoalDisXY = sqrt(relativeGoalX * relativeGoalX + relativeGoalY * relativeGoalY);
         relativeGoalDisZ = fabs(relativeGoalZ);
         
-        RCLCPP_INFO(nh->get_logger(), "距离分量 - XY平面: %.3f, Z轴: %.3f", relativeGoalDisXY, relativeGoalDisZ);
+        // RCLCPP_INFO(nh->get_logger(), "距离分量 - XY平面: %.3f, Z轴: %.3f", relativeGoalDisXY, relativeGoalDisZ);
         
         // 更新relativeGoalDis：支持可配置的距离计算方式
         if (use3DMode) {
           // 复杂地形模式：使用3D欧几里得距离（适用于爬楼梯等场景）
           relativeGoalDis = sqrt(relativeGoalDisXY * relativeGoalDisXY + relativeGoalDisZ * relativeGoalDisZ);
 
-          RCLCPP_INFO(nh->get_logger(), "3D模式 - 最终相对目标距离: %.3f", relativeGoalDis);
+          // RCLCPP_INFO(nh->get_logger(), "3D模式 - 最终相对目标距离: %.3f", relativeGoalDis);
 
         } else {
           // 标准模式：使用XY距离（适用于平地和一般导航）
@@ -1089,9 +1089,9 @@ int main(int argc, char** argv)
           int rotDir = int(selectedGroupID / groupNum);
           float rotAng = (10.0 * rotDir - 180.0) * PI / 180;
 
-          // 打印路径选择信息
-          RCLCPP_INFO(nh->get_logger(), "Path Selection Info - GroupID: %d, RotDir: %d, RotAngle: %.2f degrees", 
-                      selectedGroupID % groupNum, rotDir, rotAng * 180.0 / PI);
+          // // 打印路径选择信息
+          // RCLCPP_INFO(nh->get_logger(), "Path Selection Info - GroupID: %d, RotDir: %d, RotAngle: %.2f degrees", 
+          //             selectedGroupID % groupNum, rotDir, rotAng * 180.0 / PI);
 
           selectedGroupID = selectedGroupID % groupNum;
           int selectedPathLength = startPaths[selectedGroupID]->points.size();
@@ -1101,10 +1101,6 @@ int main(int argc, char** argv)
             float y = startPaths[selectedGroupID]->points[i].y;
             float z = startPaths[selectedGroupID]->points[i].z;
 
-            // 打印原始点的坐标
-            if (i == selectedPathLength - 1) {
-                RCLCPP_INFO(nh->get_logger(), "原始最后一个点 - x: %.3f, y: %.3f, z: %.3f", x, y, z);
-            }
 
             // 根据3D模式选择距离计算方式（与障碍物检测保持一致）
             float dis;
@@ -1122,20 +1118,13 @@ int main(int argc, char** argv)
                 float rotY = sin(rotAng) * x + cos(rotAng) * y;
                 float rotZ = z;
 
-                // 打印旋转后的坐标
-                if (i == selectedPathLength - 1) {
-                    RCLCPP_INFO(nh->get_logger(), "After rotation last point - rotX: %.3f, rotY: %.3f, rotZ: %.3f", rotX, rotY, rotZ);
-                }
                 
                 // 保持相对于vehicle frame，不进行全局坐标变换
                 point.x = pathScale * rotX;
                 point.y = pathScale * rotY;
                 point.z = pathScale * rotZ;
 
-                // 打印缩放后的坐标
-                if (i == selectedPathLength - 1) {
-                    RCLCPP_INFO(nh->get_logger(), "缩放后最后一个点 - point.x: %.3f, point.y: %.3f, point.z: %.3f", point.x, point.y, point.z);
-                }
+
               } else {
                 // 标准模式：仅Yaw变换（原始逻辑）
                 point.x = pathScale * (cos(rotAng) * x - sin(rotAng) * y);
@@ -1151,26 +1140,17 @@ int main(int argc, char** argv)
               path.poses[i].pose.position.y = point.y;
               path.poses[i].pose.position.z = point.z;
 
-              // 打印存入path的坐标
-              if (i == selectedPathLength - 1) {
-                  RCLCPP_INFO(nh->get_logger(), "最终路径最后一个点 - x: %.2f, y: %.2f, z: %.2f", 
-                             path.poses[i].pose.position.x,
-                             path.poses[i].pose.position.y,
-                             path.poses[i].pose.position.z);
-              }
             } else {
               // 如果路径点超出范围，则跳出循环,将路径长度缩短到i
               path.poses.resize(i);
-              RCLCPP_INFO(nh->get_logger(), "路径在点 %d 处截断", i);
+
+              // // 截断点日志
+              // RCLCPP_INFO(nh->get_logger(), "路径在点 %d 处截断", i);
+              
               break;
             }
           }
 
-          // 在发布路径前添加打印
-          RCLCPP_INFO(nh->get_logger(), "路径结束点 - x: %.2f, y: %.2f, z: %.2f", 
-                      path.poses[path.poses.size() - 1].pose.position.x,
-                      path.poses[path.poses.size() - 1].pose.position.y,
-                      path.poses[path.poses.size() - 1].pose.position.z);
 
           path.header.stamp = rclcpp::Time(static_cast<uint64_t>(odomTime * 1e9));
           path.header.frame_id = "vehicle";
