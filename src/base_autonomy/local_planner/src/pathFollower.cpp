@@ -45,6 +45,7 @@ const double PI = 3.1415926;
 
 double sensorOffsetX = 0;
 double sensorOffsetY = 0;
+double sensorOffsetZ = 0;  // 添加Z方向偏移量
 int pubSkipNum = 1;
 int pubSkipCount = 0;
 bool twoWayDrive = true;
@@ -130,9 +131,41 @@ void odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odomIn)
   vehicleRoll = roll;
   vehiclePitch = pitch;
   vehicleYaw = yaw;
-  vehicleX = odomIn->pose.pose.position.x - cos(yaw) * sensorOffsetX + sin(yaw) * sensorOffsetY;
-  vehicleY = odomIn->pose.pose.position.y - sin(yaw) * sensorOffsetX - cos(yaw) * sensorOffsetY;
-  vehicleZ = odomIn->pose.pose.position.z;
+
+  if (use3DMode) {
+    // 3D模式：考虑完整的3D传感器偏移变换
+    float cosRoll = cos(roll);
+    float sinRoll = sin(roll);
+    float cosPitch = cos(pitch);
+    float sinPitch = sin(pitch);
+    float cosYaw = cos(yaw);
+    float sinYaw = sin(yaw);
+    
+    // 应用完整的3D旋转变换到传感器偏移向量
+    // 第一步：Roll旋转（绕X轴）
+    float temp1X = sensorOffsetX;
+    float temp1Y = sensorOffsetY * cosRoll - sensorOffsetZ * sinRoll;
+    float temp1Z = sensorOffsetY * sinRoll + sensorOffsetZ * cosRoll;
+    
+    // 第二步：Pitch旋转（绕Y轴）
+    float temp2X = temp1X * cosPitch + temp1Z * sinPitch;
+    float temp2Y = temp1Y;
+    float temp2Z = -temp1X * sinPitch + temp1Z * cosPitch;
+    
+    // 第三步：Yaw旋转（绕Z轴）
+    float sensorOffsetWorldX = temp2X * cosYaw - temp2Y * sinYaw;
+    float sensorOffsetWorldY = temp2X * sinYaw + temp2Y * cosYaw;
+    float sensorOffsetWorldZ = temp2Z;
+    
+    vehicleX = odomIn->pose.pose.position.x - sensorOffsetWorldX;
+    vehicleY = odomIn->pose.pose.position.y - sensorOffsetWorldY;
+    vehicleZ = odomIn->pose.pose.position.z - sensorOffsetWorldZ;
+  } else {
+    // 标准模式：仅考虑Yaw旋转的传感器偏移
+    vehicleX = odomIn->pose.pose.position.x - cos(yaw) * sensorOffsetX + sin(yaw) * sensorOffsetY;
+    vehicleY = odomIn->pose.pose.position.y - sin(yaw) * sensorOffsetX - cos(yaw) * sensorOffsetY;
+    vehicleZ = odomIn->pose.pose.position.z - sensorOffsetZ;  // 添加Z偏移
+  }
 
   if ((fabs(roll) > inclThre * PI / 180.0 || fabs(pitch) > inclThre * PI / 180.0) && useInclToStop) {
     stopInitTime = rclcpp::Time(odomIn->header.stamp).seconds();
@@ -219,6 +252,8 @@ int main(int argc, char** argv)
 
   nh->declare_parameter<double>("sensorOffsetX", sensorOffsetX);
   nh->declare_parameter<double>("sensorOffsetY", sensorOffsetY);
+  nh->declare_parameter<double>("sensorOffsetZ", sensorOffsetZ);  // 添加Z偏移量参数声明
+  nh->declare_parameter<bool>("use3DMode", use3DMode);  // 添加3D模式参数声明
   nh->declare_parameter<int>("pubSkipNum", pubSkipNum);
   nh->declare_parameter<bool>("twoWayDrive", twoWayDrive);
   nh->declare_parameter<double>("lookAheadDis", lookAheadDis);
@@ -253,6 +288,8 @@ int main(int argc, char** argv)
 
   nh->get_parameter("sensorOffsetX", sensorOffsetX);
   nh->get_parameter("sensorOffsetY", sensorOffsetY);
+  nh->get_parameter("sensorOffsetZ", sensorOffsetZ);  // 获取Z偏移量参数
+  nh->get_parameter("use3DMode", use3DMode);  // 获取3D模式参数
   nh->get_parameter("pubSkipNum", pubSkipNum);
   nh->get_parameter("twoWayDrive", twoWayDrive);
   nh->get_parameter("lookAheadDis", lookAheadDis);
