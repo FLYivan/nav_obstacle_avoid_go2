@@ -1,3 +1,4 @@
+// 包含所需的头文件
 #include <math.h>
 #include <time.h>
 #include <stdio.h>
@@ -5,26 +6,31 @@
 #include <chrono>
 #include <queue>
 
+// ROS2相关头文件
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
 #include "builtin_interfaces/msg/time.hpp"
 
+// ROS2消息类型头文件
 #include "nav_msgs/msg/odometry.hpp"
 #include "sensor_msgs/msg/point_cloud2.hpp"
 #include <sensor_msgs/msg/joy.hpp>
 #include <std_msgs/msg/float32.hpp>
 #include <std_msgs/msg/float32_multi_array.hpp>
 
+// TF2相关头文件
 #include "tf2/transform_datatypes.h"
 #include "tf2_ros/transform_broadcaster.h"
 #include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
 
+// PCL点云处理相关头文件
 #include <pcl/filters/voxel_grid.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl_conversions/pcl_conversions.h>
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
+// 消息过滤器相关头文件
 #include "message_filters/subscriber.h"
 #include "message_filters/synchronizer.h"
 #include "message_filters/sync_policies/approximate_time.h"
@@ -33,69 +39,75 @@
 
 using namespace std;
 
+// 定义常量
 const double PI = 3.1415926;
 
-double scanVoxelSize = 0.1;
-double decayTime = 10.0;
-double noDecayDis = 0;
-double clearingDis = 30.0;
-bool clearingCloud = false;
-bool useSorting = false;
-double quantileZ = 0.25;
-double vehicleHeight = 1.5;
-int voxelPointUpdateThre = 100;
-double voxelTimeUpdateThre = 2.0;
-double lowerBoundZ = -1.5;
-double upperBoundZ = 1.0;
-double disRatioZ = 0.1;
-bool checkTerrainConn = true;
-double terrainUnderVehicle = -0.75;
-double terrainConnThre = 0.5;
-double ceilingFilteringThre = 2.0;
-double localTerrainMapRadius = 4.0;
+// 点云处理参数
+double scanVoxelSize = 0.1;        // 体素大小
+double decayTime = 10.0;           // 点云衰减时间
+double noDecayDis = 0;             // 不衰减的距离阈值
+double clearingDis = 30.0;         // 清除点云的距离阈值
+bool clearingCloud = false;        // 是否清除点云标志
+bool useSorting = false;           // 是否使用排序
+double quantileZ = 0.25;           // Z轴分位数
+double vehicleHeight = 1.5;        // 车辆高度
+int voxelPointUpdateThre = 100;    // 体素点更新阈值
+double voxelTimeUpdateThre = 2.0;  // 体素时间更新阈值
+double lowerBoundZ = -1.5;         // Z轴下界
+double upperBoundZ = 1.0;          // Z轴上界
+double disRatioZ = 0.1;           // 距离比例系数
+bool checkTerrainConn = true;      // 是否检查地形连通性
+double terrainUnderVehicle = -0.75;// 车辆下方地形高度
+double terrainConnThre = 0.5;      // 地形连通性阈值
+double ceilingFilteringThre = 2.0; // 天花板过滤阈值
+double localTerrainMapRadius = 4.0;// 局部地形图半径，这个距离内的点，使用局部地图terrainmap的点，并与远距离地形点云缝合
 
-// terrain voxel parameters
-float terrainVoxelSize = 2.0;
-int terrainVoxelShiftX = 0;
-int terrainVoxelShiftY = 0;
-const int terrainVoxelWidth = 41;
-int terrainVoxelHalfWidth = (terrainVoxelWidth - 1) / 2;
-const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;
+// 地形体素参数
+float terrainVoxelSize = 2.0;      // 地形体素大小
+int terrainVoxelShiftX = 0;        // X方向偏移
+int terrainVoxelShiftY = 0;        // Y方向偏移
+const int terrainVoxelWidth = 41;  // 地形体素宽度
+int terrainVoxelHalfWidth = (terrainVoxelWidth - 1) / 2;  // 远距离，扩展地形体素的半径，近处不扩展
+const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;  // 地形体素总数
 
-// planar voxel parameters
-float planarVoxelSize = 0.4;
-const int planarVoxelWidth = 101;
-int planarVoxelHalfWidth = (planarVoxelWidth - 1) / 2;
-const int planarVoxelNum = planarVoxelWidth * planarVoxelWidth;
+// 平面体素参数
+float planarVoxelSize = 0.4;       // 平面体素大小，0.4米 x 0.4米，用于所有距离的地形分析，不仅仅是远距离
+const int planarVoxelWidth = 101;  // 平面体素网格宽度，101 x 101的网格
+int planarVoxelHalfWidth = (planarVoxelWidth - 1) / 2;  // 半宽
+const int planarVoxelNum = planarVoxelWidth * planarVoxelWidth;  // 总网格数
 
-pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloud(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudCrop(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudDwz(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloud(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudElev(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudLocal(new pcl::PointCloud<pcl::PointXYZI>());
-pcl::PointCloud<pcl::PointXYZI>::Ptr terrainVoxelCloud[terrainVoxelNum];
+// 点云数据结构
+pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloud(new pcl::PointCloud<pcl::PointXYZI>());  // 原始激光点云
+pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudCrop(new pcl::PointCloud<pcl::PointXYZI>());  // 裁剪后的点云
+pcl::PointCloud<pcl::PointXYZI>::Ptr laserCloudDwz(new pcl::PointCloud<pcl::PointXYZI>());   // 降采样后的点云
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloud(new pcl::PointCloud<pcl::PointXYZI>());    // 地形点云
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudElev(new pcl::PointCloud<pcl::PointXYZI>());// 带高程的地形点云
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainCloudLocal(new pcl::PointCloud<pcl::PointXYZI>());// 局部地形点云
+pcl::PointCloud<pcl::PointXYZI>::Ptr terrainVoxelCloud[terrainVoxelNum];  // 地形体素点云数组
 
-int terrainVoxelUpdateNum[terrainVoxelNum] = { 0 };
-float terrainVoxelUpdateTime[terrainVoxelNum] = { 0 };
-float planarVoxelElev[planarVoxelNum] = { 0 };
-int planarVoxelConn[planarVoxelNum] = { 0 };
-vector<float> planarPointElev[planarVoxelNum];
-queue<int> planarVoxelQueue;
+// 地形体素状态数组
+int terrainVoxelUpdateNum[terrainVoxelNum] = { 0 };      // 更新计数
+float terrainVoxelUpdateTime[terrainVoxelNum] = { 0 };   // 更新时间
+float planarVoxelElev[planarVoxelNum] = { 0 };          // 平面体素高程
+int planarVoxelConn[planarVoxelNum] = { 0 };            // 平面体素连通性
+vector<float> planarPointElev[planarVoxelNum];          // 平面点高程
+queue<int> planarVoxelQueue;                            // 平面体素队列
 
-double laserCloudTime = 0;
-bool newlaserCloud = false;
+// 时间和状态变量
+double laserCloudTime = 0;         // 激光点云时间戳
+bool newlaserCloud = false;        // 新点云标志
+double systemInitTime = 0;         // 系统初始化时间
+bool systemInited = false;         // 系统初始化标志
 
-double systemInitTime = 0;
-bool systemInited = false;
+// 车辆姿态和位置
+float vehicleRoll = 0, vehiclePitch = 0, vehicleYaw = 0;  // 横滚、俯仰、偏航角
+float vehicleX = 0, vehicleY = 0, vehicleZ = 0;           // 位置坐标
 
-float vehicleRoll = 0, vehiclePitch = 0, vehicleYaw = 0;
-float vehicleX = 0, vehicleY = 0, vehicleZ = 0;
+// PCL滤波器
+pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;  // 降采样滤波器
+pcl::KdTreeFLANN<pcl::PointXYZI> kdtree;        // K-D树
 
-pcl::VoxelGrid<pcl::PointXYZI> downSizeFilter;
-pcl::KdTreeFLANN<pcl::PointXYZI> kdtree;
-
-// state estimation callback function
+// 状态估计回调函数 - 处理车辆位姿信息
 void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
 {
   double roll, pitch, yaw;
@@ -110,17 +122,19 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
   vehicleZ = odom->pose.pose.position.z;
 }
 
-// registered laser scan callback function
+// 激光点云回调函数 - 处理注册后的激光扫描数据
 void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2)
 {
   laserCloudTime = rclcpp::Time(laserCloud2->header.stamp).seconds();
 
+  // 系统初始化
   if (!systemInited)
   {
     systemInitTime = laserCloudTime;
     systemInited = true;
   }
 
+  // 转换点云格式并进行初步过滤
   laserCloud->clear();
   pcl::fromROSMsg(*laserCloud2, *laserCloud);
 
@@ -135,6 +149,7 @@ void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laser
     float pointY = point.y;
     float pointZ = point.z;
 
+    // 根据距离和高度过滤点云
     float dis = sqrt((pointX - vehicleX) * (pointX - vehicleX) + (pointY - vehicleY) * (pointY - vehicleY));
     if (pointZ - vehicleZ > lowerBoundZ - disRatioZ * dis && pointZ - vehicleZ < upperBoundZ + disRatioZ * dis &&
         dis < terrainVoxelSize * (terrainVoxelHalfWidth + 1))
@@ -150,14 +165,14 @@ void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laser
   newlaserCloud = true;
 }
 
-// local terrain cloud callback function
+// 局部地形点云回调函数
 void terrainCloudLocalHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr terrainCloudLocal2)
 {
   terrainCloudLocal->clear();
   pcl::fromROSMsg(*terrainCloudLocal2, *terrainCloudLocal);
 }
 
-// joystick callback function
+// 手柄回调函数 - 处理手动清除点云的指令
 void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
 {
   if (joy->buttons[5] > 0.5)
@@ -166,18 +181,21 @@ void joystickHandler(const sensor_msgs::msg::Joy::ConstSharedPtr joy)
   }
 }
 
-// cloud clearing callback function
+// 点云清除回调函数
 void clearingHandler(const std_msgs::msg::Float32::ConstSharedPtr dis)
 {
   clearingDis = dis->data;
   clearingCloud = true;
 }
 
+// 主函数
 int main(int argc, char** argv)
 {
+  // 初始化ROS2节点
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysisExt");
 
+  // 声明和获取参数
   nh->declare_parameter<double>("scanVoxelSize", scanVoxelSize);
   nh->declare_parameter<double>("decayTime", decayTime);
   nh->declare_parameter<double>("noDecayDis", noDecayDis);
@@ -195,6 +213,8 @@ int main(int argc, char** argv)
   nh->declare_parameter<double>("terrainConnThre", terrainConnThre);
   nh->declare_parameter<double>("ceilingFilteringThre", ceilingFilteringThre);
   nh->declare_parameter<double>("localTerrainMapRadius", localTerrainMapRadius);
+  nh->declare_parameter<float>("planarVoxelSize", planarVoxelSize);     // 默认值0.4
+
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
   nh->get_parameter("decayTime", decayTime);
@@ -213,29 +233,32 @@ int main(int argc, char** argv)
   nh->get_parameter("terrainConnThre", terrainConnThre);
   nh->get_parameter("ceilingFilteringThre", ceilingFilteringThre);
   nh->get_parameter("localTerrainMapRadius", localTerrainMapRadius);
+  nh->get_parameter("planarVoxelSize", planarVoxelSize);
 
+
+  // 创建订阅者
   auto subOdometry = nh->create_subscription<nav_msgs::msg::Odometry>("/state_estimation", 5, odometryHandler);
-
   auto subLaserCloud = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/registered_scan", 5, laserCloudHandler);
-
   auto subJoystick = nh->create_subscription<sensor_msgs::msg::Joy>("/joy", 5, joystickHandler);
-
   auto subClearing = nh->create_subscription<std_msgs::msg::Float32>("/cloud_clearing", 5, clearingHandler);
-
   auto subTerrainCloudLocal = nh->create_subscription<sensor_msgs::msg::PointCloud2>("/terrain_map", 2, terrainCloudLocalHandler);
 
+  // 创建发布者
   auto pubTerrainCloud = nh->create_publisher<sensor_msgs::msg::PointCloud2>("/terrain_map_ext", 2);
 
+  // 初始化地形体素点云数组
   for (int i = 0; i < terrainVoxelNum; i++)
   {
     terrainVoxelCloud[i].reset(new pcl::PointCloud<pcl::PointXYZI>());
   }
 
+  // 设置降采样滤波器参数
   downSizeFilter.setLeafSize(scanVoxelSize, scanVoxelSize, scanVoxelSize);
 
   std::vector<int> pointIdxNKNSearch;
   std::vector<float> pointNKNSquaredDistance;
 
+  // 主循环
   rclcpp::Rate rate(100);
   bool status = rclcpp::ok();
   while (status)
@@ -246,10 +269,11 @@ int main(int argc, char** argv)
     {
       newlaserCloud = false;
 
-      // terrain voxel roll over
+      // 地形体素滚动更新
       float terrainVoxelCenX = terrainVoxelSize * terrainVoxelShiftX;
       float terrainVoxelCenY = terrainVoxelSize * terrainVoxelShiftY;
 
+      // 处理X方向的体素滚动
       while (vehicleX - terrainVoxelCenX < -terrainVoxelSize)
       {
         for (int indY = 0; indY < terrainVoxelWidth; indY++)
@@ -285,6 +309,7 @@ int main(int argc, char** argv)
         terrainVoxelCenX = terrainVoxelSize * terrainVoxelShiftX;
       }
 
+      // 处理Y方向的体素滚动
       while (vehicleY - terrainVoxelCenY < -terrainVoxelSize)
       {
         for (int indX = 0; indX < terrainVoxelWidth; indX++)
@@ -320,13 +345,14 @@ int main(int argc, char** argv)
         terrainVoxelCenY = terrainVoxelSize * terrainVoxelShiftY;
       }
 
-      // stack registered laser scans
+      // 将注册的激光扫描数据堆叠到地形体素中
       pcl::PointXYZI point;
       int laserCloudCropSize = laserCloudCrop->points.size();
       for (int i = 0; i < laserCloudCropSize; i++)
       {
         point = laserCloudCrop->points[i];
 
+        // 计算点云在体素网格中的索引
         int indX = int((point.x - vehicleX + terrainVoxelSize / 2) / terrainVoxelSize) + terrainVoxelHalfWidth;
         int indY = int((point.y - vehicleY + terrainVoxelSize / 2) / terrainVoxelSize) + terrainVoxelHalfWidth;
 
@@ -335,6 +361,7 @@ int main(int argc, char** argv)
         if (point.y - vehicleY + terrainVoxelSize / 2 < 0)
           indY--;
 
+        // 将点云添加到对应的体素中
         if (indX >= 0 && indX < terrainVoxelWidth && indY >= 0 && indY < terrainVoxelWidth)
         {
           terrainVoxelCloud[terrainVoxelWidth * indX + indY]->push_back(point);
@@ -342,6 +369,7 @@ int main(int argc, char** argv)
         }
       }
 
+      // 更新地形体素
       for (int ind = 0; ind < terrainVoxelNum; ind++)
       {
         if (terrainVoxelUpdateNum[ind] >= voxelPointUpdateThre ||
@@ -349,10 +377,12 @@ int main(int argc, char** argv)
         {
           pcl::PointCloud<pcl::PointXYZI>::Ptr terrainVoxelCloudPtr = terrainVoxelCloud[ind];
 
+          // 对体素中的点云进行降采样
           laserCloudDwz->clear();
           downSizeFilter.setInputCloud(terrainVoxelCloudPtr);
           downSizeFilter.filter(*laserCloudDwz);
 
+          // 根据时间和距离过滤点云
           terrainVoxelCloudPtr->clear();
           int laserCloudDwzSize = laserCloudDwz->points.size();
           for (int i = 0; i < laserCloudDwzSize; i++)
@@ -373,6 +403,7 @@ int main(int argc, char** argv)
         }
       }
 
+      // 合并地形点云
       terrainCloud->clear();
       for (int indX = terrainVoxelHalfWidth - 10; indX <= terrainVoxelHalfWidth + 10; indX++)
       {
@@ -382,7 +413,7 @@ int main(int argc, char** argv)
         }
       }
 
-      // estimate ground and compute elevation for each point
+      // 估计地面并计算每个点的高程
       for (int i = 0; i < planarVoxelNum; i++)
       {
         planarVoxelElev[i] = 0;
@@ -390,6 +421,7 @@ int main(int argc, char** argv)
         planarPointElev[i].clear();
       }
 
+      // 计算每个点的高程
       int terrainCloudSize = terrainCloud->points.size();
       for (int i = 0; i < terrainCloudSize; i++)
       {
@@ -405,6 +437,7 @@ int main(int argc, char** argv)
           if (point.y - vehicleY + planarVoxelSize / 2 < 0)
             indY--;
 
+          // 将点的高程添加到相邻体素中
           for (int dX = -1; dX <= 1; dX++)
           {
             for (int dY = -1; dY <= 1; dY++)
@@ -418,6 +451,7 @@ int main(int argc, char** argv)
         }
       }
 
+      // 使用排序或最小值方法计算体素高程
       if (useSorting)
       {
         for (int i = 0; i < planarVoxelNum; i++)
@@ -463,13 +497,14 @@ int main(int argc, char** argv)
         }
       }
   
-      // check terrain connectivity to remove ceiling
+      // 检查地形连通性以去除天花板
       if (checkTerrainConn)
       {
         int ind = planarVoxelWidth * planarVoxelHalfWidth + planarVoxelHalfWidth;
         if (planarPointElev[ind].size() == 0)
           planarVoxelElev[ind] = vehicleZ + terrainUnderVehicle;
 
+        // 使用广度优先搜索检查连通性
         planarVoxelQueue.push(ind);
         planarVoxelConn[ind] = 1;
         while (!planarVoxelQueue.empty())

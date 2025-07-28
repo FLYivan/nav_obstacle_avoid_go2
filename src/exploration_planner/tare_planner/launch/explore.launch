@@ -37,6 +37,6 @@ def generate_launch_description():
     return LaunchDescription([
         declare_use_sim_time_cmd,
         declare_scenario,
-        SetParameter(name='use_sim_time', value=use_sim_time),
-        OpaqueFunction(function=launch_tare_node, args=[scenario])
+        SetParameter(name='use_sim_time', value=use_sim_time),              # ROS2的全局参数，所有启动的节点都可以访问这个参数
+        OpaqueFunction(function=launch_tare_node, args=[scenario])          # 是延迟执行节点的启动
     ])
