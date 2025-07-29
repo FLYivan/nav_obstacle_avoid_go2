@@ -58,7 +58,7 @@ double upperBoundZ = 1.0;          // Z轴上界
 double disRatioZ = 0.1;           // 距离比例系数
 bool checkTerrainConn = true;      // 是否检查地形连通性
 double terrainUnderVehicle = -0.75;// 车辆下方地形高度
-double terrainConnThre = 0.5;      // 地形连通性阈值
+double terrainConnThre = 0.5;      // 地形连通性阈值，是地形的高度差阈值
 double ceilingFilteringThre = 2.0; // 天花板过滤阈值
 double localTerrainMapRadius = 4.0;// 局部地形图半径，这个距离内的点，使用局部地图terrainmap的点，并与远距离地形点云缝合
 

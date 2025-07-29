@@ -308,7 +308,7 @@ int main(int argc, char **argv) {
   // 根据参数设置机器人本体尺寸
   if (use_l1_go2IMU) {
       robotBodyMinX = -0.4;  // 本体后方边界（-0.4m）
-      robotBodyMaxX = 0.4;   // 本体前方边界（+0.4m）
+      robotBodyMaxX = 0.5;   // 本体前方边界（+0.4m）
   } else {
       robotBodyMinX = -0.6;  // 本体后方边界（-0.6m）
       robotBodyMaxX = 0.2;   // 本体前方边界（+0.2m）

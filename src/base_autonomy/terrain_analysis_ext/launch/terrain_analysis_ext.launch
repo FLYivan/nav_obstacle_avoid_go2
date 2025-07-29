@@ -1,6 +1,8 @@
 <launch>
 
   <arg name="checkTerrainConn" default="false"/>
+  <arg name="planarVoxelSize" default="0.4"/>           # 平面体素大小
+  <arg name="terrainConnThre" default="0.5"/>           # 地形连通性阈值
 
   <node pkg="terrain_analysis_ext" exec="terrainAnalysisExt" name="terrainAnalysisExt" output="screen">
     <param name="scanVoxelSize" value="0.1" />
@@ -16,10 +18,11 @@
     <param name="upperBoundZ" value="1.0" />
     <param name="disRatioZ" value="0.1" />
     <param name="checkTerrainConn" value="$(var checkTerrainConn)" />
-    <param name="terrainConnThre" value="0.5" />
+    <param name="terrainConnThre" value="$(var terrainConnThre)" />
     <param name="terrainUnderVehicle" value="-0.75" />
     <param name="ceilingFilteringThre" value="2.0" />
     <param name="localTerrainMapRadius" value="4.0" />
+    <param name="planarVoxelSize" value="$(var planarVoxelSize)" />
   </node>
 
 </launch>

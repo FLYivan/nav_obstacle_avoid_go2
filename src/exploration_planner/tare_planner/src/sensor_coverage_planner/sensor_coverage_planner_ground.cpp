@@ -555,6 +555,12 @@ void SensorCoveragePlanner3D::RegisteredScanCallback(
 }
 
 void SensorCoveragePlanner3D::TerrainMapCallback(
+
+  // 同时进行近距离的碰撞检测
+  // 1、实时性考虑：近距离的碰撞检测更关键，需要更快的响应
+  // 2、精度考虑：近距离区域使用更精细的地形分析结果（来自terrain_map）
+  // 3、安全性考虑：通过两个回调分别处理，即使一个话题出现延迟或丢失，另一个仍能保证基本的碰撞检测功能
+
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr terrain_map_msg) {
   if (kCheckTerrainCollision) {
     pcl::PointCloud<pcl::PointXYZI>::Ptr terrain_map_tmp(
@@ -562,6 +568,8 @@ void SensorCoveragePlanner3D::TerrainMapCallback(
     pcl::fromROSMsg<pcl::PointXYZI>(*terrain_map_msg, *terrain_map_tmp);
     terrain_collision_cloud_->cloud_->clear();
     for (auto &point : terrain_map_tmp->points) {
+
+      // 根据点的intensity值（代表高度差）筛选出可能造成碰撞的点
       if (point.intensity > kTerrainCollisionThreshold) {
         terrain_collision_cloud_->cloud_->points.push_back(point);
       }
@@ -571,14 +579,21 @@ void SensorCoveragePlanner3D::TerrainMapCallback(
 
 void SensorCoveragePlanner3D::TerrainMapExtCallback(
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr terrain_map_ext_msg) {
+  // 1. 如果使用地形高度
+  // 接收从terrainAnalysisExt节点发布的扩展地形地图
+  // 将地形点云数据存储在large_terrain_cloud_中
   if (kUseTerrainHeight) {
     pcl::fromROSMsg<pcl::PointXYZI>(*terrain_map_ext_msg,
                                     *(large_terrain_cloud_->cloud_));
   }
+  
+  // 2. 如果需要检查地形碰撞
   if (kCheckTerrainCollision) {
     pcl::fromROSMsg<pcl::PointXYZI>(*terrain_map_ext_msg,
                                     *(large_terrain_cloud_->cloud_));
     terrain_ext_collision_cloud_->cloud_->clear();
+    // 遍历所有点，找出高度差大于阈值的点作为碰撞点
+    // 如果点的intensity大于kTerrainCollisionThreshold（默认0.5米），就认为这个点可能造成碰撞
     for (auto &point : large_terrain_cloud_->cloud_->points) {
       if (point.intensity > kTerrainCollisionThreshold) {
         terrain_ext_collision_cloud_->cloud_->points.push_back(point);
