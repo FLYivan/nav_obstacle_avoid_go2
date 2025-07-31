@@ -80,6 +80,8 @@ void laserCloudAndOdometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr 
     laserCLoudInSensorFrame->points.push_back(p1);
   }
 
+// 全局坐标系→传感器坐标系的转换,在传感器坐标系中，障碍物距离计算简化,计算量减少90%以上
+
   odometryIn.header.stamp = laserCloud2->header.stamp;
   odometryIn.header.frame_id = "map";
   odometryIn.child_frame_id = "sensor_at_scan";
@@ -129,7 +131,7 @@ int main(int argc, char** argv)
   subLaserCloud.subscribe(nh, "/registered_scan", qos_profile);
   sync_.reset(new Sync(syncPolicy(100), subOdometry, subLaserCloud));
   sync_->registerCallback(std::bind(laserCloudAndOdometryHandler, placeholders::_1, placeholders::_2));
-  pubOdometryPointer = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation_at_scan", 5);
+  pubOdometryPointer = nh->create_publisher<nav_msgs::msg::Odometry>("/state_estimation_at_scan", 5); // 用于时间敏感度极高的避障
 
   tfBroadcasterPointer = std::make_unique<tf2_ros::TransformBroadcaster>(*nh);
 

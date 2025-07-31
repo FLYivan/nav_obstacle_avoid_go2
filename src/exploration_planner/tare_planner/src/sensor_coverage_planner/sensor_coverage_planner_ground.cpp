@@ -969,7 +969,7 @@ void SensorCoveragePlanner3D::PublishGlobalPlanningVisualization(
   // exploration_path_publisher_->publish(full_path);
   exploration_path_.GetVisualizationCloud(exploration_path_cloud_->cloud_);
   exploration_path_cloud_->Publish();
-  // planning_env_->PublishStackedCloud();
+  planning_env_->PublishStackedCloud();             // 临时取消/stacked_cloud话题发布注释
 }
 
 // 本函数用于进行局部规划
@@ -1387,16 +1387,23 @@ void SensorCoveragePlanner3D::PublishWaypoint() {
     waypoint.point.y = initial_position_.y();
     waypoint.point.z = initial_position_.z();
   } else {
+    // 计算机器人到前瞻点的距离
     double dx = lookahead_point_.x() - robot_position_.x;
     double dy = lookahead_point_.y() - robot_position_.y;
     double r = sqrt(dx * dx + dy * dy);
+
+    // 根据前瞻点是否在视线内选择延伸距离
     double extend_dist = lookahead_point_in_line_of_sight_
-                             ? kExtendWayPointDistanceBig
-                             : kExtendWayPointDistanceSmall;
+                             ? kExtendWayPointDistanceBig       // 前瞻点在视线内
+                             : kExtendWayPointDistanceSmall;    // 前瞻点不在视线内
+
+    // 如果当前到前瞻点的距离小于期望延伸距离，进行延伸
     if (r < extend_dist && kExtendWayPoint) {
       dx = dx / r * extend_dist;
       dy = dy / r * extend_dist;
     }
+
+    // 发布延伸后的waypoint
     waypoint.point.x = dx + robot_position_.x;
     waypoint.point.y = dy + robot_position_.y;
     waypoint.point.z = lookahead_point_.z();
