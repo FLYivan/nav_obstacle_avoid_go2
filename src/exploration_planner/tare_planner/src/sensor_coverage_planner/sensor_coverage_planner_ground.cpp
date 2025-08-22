@@ -1407,6 +1407,7 @@ void SensorCoveragePlanner3D::PublishWaypoint() {
     waypoint.point.x = dx + robot_position_.x;
     waypoint.point.y = dy + robot_position_.y;
     waypoint.point.z = lookahead_point_.z();
+    // waypoint.point.z = lookahead_point_.z() - kViewPointHeightFromTerrain;
   }
   misc_utils_ns::Publish(shared_from_this(), waypoint_pub_, waypoint,
                          kWorldFrameID);

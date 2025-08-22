@@ -666,7 +666,6 @@ int main(int argc, char **argv) {
           }
         }
       }
-
       // 如果启用了无数据障碍物检测且无数据初始化完成
       if (noDataObstacle && noDataInited == 2) {
         // 遍历所有平面体素
@@ -706,10 +705,9 @@ int main(int argc, char **argv) {
             if (!isInRobotBody) {
                 int planarPointElevSize = planarPointElev[i].size();
 
-                // 1、在平地时才考虑点云数量条件，或者2、有点云数据时的高度条件
+                // 只在x轴负半轴区域(pointX2 < 0)检查点云数量条件
                 if (
-                  (planarPointElevSize < minBlockPointNum) || 
-                  // (isOnFlatGround && planarPointElevSize < minBlockPointNum) || 
+                  (pointX2 < 0 && planarPointElevSize < minBlockPointNum) || 
                     (planarPointElevSize > maxBlockPointNum && 
                      planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
                     planarVoxelEdge[i] = 1;

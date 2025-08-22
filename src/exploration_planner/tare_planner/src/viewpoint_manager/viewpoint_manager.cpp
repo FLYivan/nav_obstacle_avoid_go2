@@ -1088,7 +1088,11 @@ void ViewPointManager::SetViewPointInCurrentFrameLineOfSight(int viewpoint_ind, 
 // Position
 geometry_msgs::msg::Point ViewPointManager::GetViewPointPosition(int viewpoint_ind, bool use_array_ind)
 {
+  //  首先调用 GetViewPointArrayInd 获取实际的数组索引
   int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind);
+
+  // 然后调用 viewpoints_ 数组中的 GetPosition 方法获取视点位置
+  // 其中z轴的值，始终= robot_position.z() =  /state_estimation_at_scan 中的 pose.pose.position.z （不会随地形变化）
   return viewpoints_[array_ind].GetPosition();
 }
 void ViewPointManager::SetViewPointPosition(int viewpoint_ind, geometry_msgs::msg::Point position, bool use_array_ind)
