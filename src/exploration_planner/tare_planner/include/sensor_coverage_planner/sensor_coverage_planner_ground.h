@@ -110,6 +110,7 @@ private:
   double kLookAheadDistance;
   double kExtendWayPointDistanceBig;
   double kExtendWayPointDistanceSmall;
+  double kViewPointHeightFromTerrain_;
 
   // Int
   int kDirectionChangeCounterThr;
