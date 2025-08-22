@@ -232,6 +232,8 @@ void SensorCoveragePlanner3D::ReadParameters() {
                       kDirectionNoChangeCounterThr);
   this->get_parameter("kResetWaypointJoystickAxesID",
                       kResetWaypointJoystickAxesID);
+
+  this->get_parameter("kViewPointHeightFromTerrain", kViewPointHeightFromTerrain_);
 }
 
 // PlannerData::PlannerData()
@@ -1406,8 +1408,8 @@ void SensorCoveragePlanner3D::PublishWaypoint() {
     // 发布延伸后的waypoint
     waypoint.point.x = dx + robot_position_.x;
     waypoint.point.y = dy + robot_position_.y;
-    waypoint.point.z = lookahead_point_.z();
-    // waypoint.point.z = lookahead_point_.z() - kViewPointHeightFromTerrain;
+    waypoint.point.z = lookahead_point_.z() - kViewPointHeightFromTerrain_;
+    // waypoint.point.z = lookahead_point_.z();
   }
   misc_utils_ns::Publish(shared_from_this(), waypoint_pub_, waypoint,
                          kWorldFrameID);
