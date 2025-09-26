@@ -757,11 +757,29 @@ int main(int argc, char **argv) {
             int indX = int(i / planarVoxelWidth);
             int indY = i % planarVoxelWidth;
 
-            // 计算到机器人的距离（使用前面已经计算好的pointX2和pointY2）
-            float distToRobot = sqrt(pointX2*pointX2 + pointY2*pointY2);
+            // 计算当前点到机器人本体矩形边界的最小距离
+            float dx = 0.0f;
+            float dy = 0.0f;
+            
+            // X方向距离计算（pointX2已经是相对于机器人中心的距离）
+            if (pointX2 < robotBodyMinX) {
+                dx = robotBodyMinX - pointX2;  // 点在本体左边界外
+            } else if (pointX2 > robotBodyMaxX) {
+                dx = pointX2 - robotBodyMaxX;  // 点在本体右边界外
+            }
+            
+            // Y方向距离计算（pointY2已经是相对于机器人中心的距离）
+            if (pointY2 < robotBodyMinY) {
+                dy = robotBodyMinY - pointY2;  // 点在本体后边界外
+            } else if (pointY2 > robotBodyMaxY) {
+                dy = pointY2 - robotBodyMaxY;  // 点在本体前边界外
+            }
+            
+            // 计算到边界的最短距离
+            float distToRobotBoundary = sqrt(dx*dx + dy*dy);
 
-            // 只在最近的1-2层生成虚拟障碍点
-            if (distToRobot <= 2 * planarVoxelSize) {  // 只保留最近的两层
+            // 从机器人本体边界开始，只保留最近的2层虚拟障碍物
+            if (distToRobotBoundary <= 2 * planarVoxelSize) {
                 point.x = planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
                 point.y = planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
                 point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
