@@ -757,27 +757,19 @@ int main(int argc, char **argv) {
             int indX = int(i / planarVoxelWidth);
             int indY = i % planarVoxelWidth;
 
-            // 计算体素中心点坐标
-            point.x =
-                planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
-            point.y =
-                planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
-            point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
-            point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
+            // 计算到机器人的距离（使用前面已经计算好的pointX2和pointY2）
+            float distToRobot = sqrt(pointX2*pointX2 + pointY2*pointY2);
 
-            // 在体素内添加4个点形成正方形
-            point.x -= planarVoxelSize / 4.0;
-            point.y -= planarVoxelSize / 4.0;
-            terrainCloudElev->push_back(point);
+            // 只在最近的1-2层生成虚拟障碍点
+            if (distToRobot <= 2 * planarVoxelSize) {  // 只保留最近的两层
+                point.x = planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
+                point.y = planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
+                point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
+                point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
 
-            point.x += planarVoxelSize / 2.0;
-            terrainCloudElev->push_back(point);
-
-            point.y += planarVoxelSize / 2.0;
-            terrainCloudElev->push_back(point);
-
-            point.x -= planarVoxelSize / 2.0;
-            terrainCloudElev->push_back(point);
+                // 只生成一个中心点
+                terrainCloudElev->push_back(point);
+            }
           }
         }
       }
