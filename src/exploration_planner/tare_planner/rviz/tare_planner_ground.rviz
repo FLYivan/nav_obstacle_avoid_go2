@@ -23,7 +23,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: FreePaths
+    SyncSource: TerrianMap
   - Class: teleop_rviz_plugin/TeleopPanel
     Name: TeleopPanel
 Visualization Manager:
@@ -79,7 +79,7 @@ Visualization Manager:
             Value: /keypose_graph_edge_marker
           Value: false
         - Class: rviz_default_plugins/Marker
-          Enabled: true
+          Enabled: false
           Name: ExploringSubspaces
           Namespaces:
             {}
@@ -90,12 +90,12 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /tare_visualizer/exploring_subspaces
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
           Color: 98; 240; 231
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
@@ -118,7 +118,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /global_path
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: false
           Autocompute Value Bounds:
@@ -131,13 +131,13 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 2
           Min Color: 0; 0; 0
           Min Intensity: 0
-          Name: OverallObjectSurfaces
+          Name: 规划点云（降采样）
           Position Transformer: XYZ
           Selectable: true
           Size (Pixels): 3
@@ -152,7 +152,41 @@ Visualization Manager:
             Value: /planner_cloud
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz_default_plugins/PointCloud2
+          Color: 255; 255; 255
+          Color Transformer: Intensity
+          Decay Time: 0
+          Enabled: false
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 1.4974637031555176
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: 碰撞点云（降采样）
+          Position Transformer: XYZ
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.009999999776482582
+          Style: Flat Squares
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /collision_cloud
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: false
         - Alpha: 0.10000000149011612
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -239,10 +273,10 @@ Visualization Manager:
     - Class: rviz_common/Group
       Displays:
         - Class: rviz_default_plugins/Marker
-          Enabled: true
+          Enabled: false
           Name: LocalPlanningHorizon
           Namespaces:
-            "": true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -250,7 +284,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /tare_visualizer/local_planning_horizon
-          Value: true
+          Value: false
         - Alpha: 0.5
           Autocompute Intensity Bounds: false
           Autocompute Value Bounds:
@@ -263,7 +297,7 @@ Visualization Manager:
           Color: 143; 240; 164
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: false
+          Enabled: true
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 100
@@ -284,7 +318,7 @@ Visualization Manager:
             Value: /viewpoint_vis_cloud
           Use Fixed Frame: true
           Use rainbow: true
-          Value: false
+          Value: true
         - Alpha: 1
           Autocompute Intensity Bounds: false
           Autocompute Value Bounds:
@@ -303,7 +337,7 @@ Visualization Manager:
           Max Intensity: 10
           Min Color: 0; 0; 0
           Min Intensity: 0
-          Name: 被选中的点云
+          Name: 被选中的视点
           Position Transformer: XYZ
           Selectable: true
           Size (Pixels): 3
@@ -319,6 +353,40 @@ Visualization Manager:
           Use Fixed Frame: true
           Use rainbow: true
           Value: true
+        - Alpha: 1
+          Autocompute Intensity Bounds: true
+          Autocompute Value Bounds:
+            Max Value: 10
+            Min Value: -10
+            Value: true
+          Axis: Z
+          Channel Name: intensity
+          Class: rviz_default_plugins/PointCloud2
+          Color: 255; 255; 255
+          Color Transformer: Intensity
+          Decay Time: 0
+          Enabled: false
+          Invert Rainbow: false
+          Max Color: 255; 255; 255
+          Max Intensity: 0
+          Min Color: 0; 0; 0
+          Min Intensity: 0
+          Name: 标记为碰撞的视点
+          Position Transformer: XYZ
+          Selectable: true
+          Size (Pixels): 3
+          Size (m): 0.029999999329447746
+          Style: Flat Squares
+          Topic:
+            Depth: 5
+            Durability Policy: Volatile
+            Filter size: 10
+            History Policy: Keep Last
+            Reliability Policy: Reliable
+            Value: /viewpoint_in_collision_cloud_
+          Use Fixed Frame: true
+          Use rainbow: true
+          Value: false
         - Alpha: 0.30000001192092896
           Autocompute Intensity Bounds: false
           Autocompute Value Bounds:
@@ -393,16 +461,16 @@ Visualization Manager:
           Color: 204; 0; 0
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 1
           Min Color: 0; 0; 0
           Min Intensity: 0
-          Name: /uncovered_cloud
+          Name: 未覆盖的普通点云
           Position Transformer: XYZ
           Selectable: true
-          Size (Pixels): 2
+          Size (Pixels): 3
           Size (m): 0.20000000298023224
           Style: Points
           Topic:
@@ -414,7 +482,7 @@ Visualization Manager:
             Value: /uncovered_cloud
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
@@ -424,19 +492,19 @@ Visualization Manager:
           Axis: Z
           Channel Name: intensity
           Class: rviz_default_plugins/PointCloud2
-          Color: 204; 0; 0
+          Color: 153; 193; 241
           Color Transformer: FlatColor
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 8
           Min Color: 0; 0; 0
           Min Intensity: 0
-          Name: /uncovered_frontier_cloud
+          Name: 未覆盖的前沿点云
           Position Transformer: XYZ
           Selectable: true
-          Size (Pixels): 5
+          Size (Pixels): 8
           Size (m): 0.30000001192092896
           Style: Points
           Topic:
@@ -448,12 +516,12 @@ Visualization Manager:
             Value: /uncovered_frontier_cloud
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
-            Max Value: 1.5989842414855957
-            Min Value: -0.6806425452232361
+            Max Value: 1.8119134902954102
+            Min Value: -2.403214693069458
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -467,7 +535,7 @@ Visualization Manager:
           Max Intensity: 4096
           Min Color: 0; 0; 0
           Min Intensity: 0
-          Name: /stacked_cloud-降采样后点云
+          Name: 历史关键姿态堆叠点云
           Position Transformer: XYZ
           Selectable: true
           Size (Pixels): 3
@@ -485,7 +553,7 @@ Visualization Manager:
           Value: false
         - Alpha: 1
           Class: rviz_default_plugins/PointStamped
-          Color: 204; 41; 204
+          Color: 26; 95; 180
           Enabled: true
           History Length: 1
           Name: Waypoint
@@ -517,7 +585,7 @@ Visualization Manager:
           Color: 255; 255; 255
           Color Transformer: Intensity
           Decay Time: 0
-          Enabled: true
+          Enabled: false
           Invert Rainbow: false
           Max Color: 255; 255; 255
           Max Intensity: 6
@@ -538,12 +606,12 @@ Visualization Manager:
             Value: /free_paths
           Use Fixed Frame: true
           Use rainbow: true
-          Value: true
+          Value: false
         - Alpha: 1
           Buffer Length: 1
           Class: rviz_default_plugins/Path
           Color: 25; 255; 0
-          Enabled: true
+          Enabled: false
           Head Diameter: 0.30000001192092896
           Head Length: 0.20000000298023224
           Length: 0.30000001192092896
@@ -566,7 +634,7 @@ Visualization Manager:
             History Policy: Keep Last
             Reliability Policy: Reliable
             Value: /path
-          Value: true
+          Value: false
       Enabled: true
       Name: Local
     - Class: rviz_default_plugins/Image
@@ -643,7 +711,7 @@ Visualization Manager:
       Color: 255; 255; 255
       Color Transformer: Intensity
       Decay Time: 0
-      Enabled: false
+      Enabled: true
       Invert Rainbow: true
       Max Color: 255; 255; 255
       Max Intensity: 0.20000000298023224
@@ -664,7 +732,7 @@ Visualization Manager:
         Value: /terrain_map
       Use Fixed Frame: true
       Use rainbow: true
-      Value: false
+      Value: true
     - Alpha: 1
       Autocompute Intensity Bounds: false
       Autocompute Value Bounds:
@@ -699,74 +767,6 @@ Visualization Manager:
       Use Fixed Frame: true
       Use rainbow: true
       Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz_default_plugins/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 1.4973289966583252
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: CollisionCloudMap
-      Position Transformer: XYZ
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Flat Squares
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /collision_cloud
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
-    - Alpha: 1
-      Autocompute Intensity Bounds: true
-      Autocompute Value Bounds:
-        Max Value: 10
-        Min Value: -10
-        Value: true
-      Axis: Z
-      Channel Name: intensity
-      Class: rviz_default_plugins/PointCloud2
-      Color: 255; 255; 255
-      Color Transformer: Intensity
-      Decay Time: 0
-      Enabled: false
-      Invert Rainbow: false
-      Max Color: 255; 255; 255
-      Max Intensity: 0
-      Min Color: 0; 0; 0
-      Min Intensity: 0
-      Name: 标记为碰撞的视点
-      Position Transformer: XYZ
-      Selectable: true
-      Size (Pixels): 3
-      Size (m): 0.009999999776482582
-      Style: Flat Squares
-      Topic:
-        Depth: 5
-        Durability Policy: Volatile
-        Filter size: 10
-        History Policy: Keep Last
-        Reliability Policy: Reliable
-        Value: /viewpoint_in_collision_cloud_
-      Use Fixed Frame: true
-      Use rainbow: true
-      Value: false
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -782,25 +782,25 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 13.777953147888184
+      Distance: 20.516878128051758
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
         Swap Stereo Eyes: false
         Value: false
       Focal Point:
-        X: 1.027020812034607
-        Y: 0.42723116278648376
-        Z: -4.384768962860107
+        X: 3.105347156524658
+        Y: -2.7817559242248535
+        Z: -1.7326165437698364
       Focal Shape Fixed Size: false
       Focal Shape Size: 0.05000000074505806
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4897964000701904
+      Pitch: 1.024796724319458
       Target Frame: map
       Value: XYOrbit (rviz)
-      Yaw: 3.660402774810791
+      Yaw: 1.7154098749160767
     Saved: ~
 Window Geometry:
   Displays:

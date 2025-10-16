@@ -224,6 +224,10 @@ double robotBodyMaxY = 0.2;   // 机器人本体右侧边界
 double maxPitchAngle = 0.1;  // 单位：弧度，大约5.7度
 double minPitchAngle = -0.1; // 单位：弧度，大约-5.7度
 
+// 内缩/外扩层数（单位：层，1 层 = planarVoxelSize）
+int boundaryBandLayers = 1;  // 本体内的边界带厚度层数
+int outerBandLayers = 1;     // 本体外扩的环带层数
+
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysis");
@@ -265,6 +269,8 @@ int main(int argc, char **argv) {
   nh->declare_parameter<double>("maxPitchAngle", maxPitchAngle);
   nh->declare_parameter<double>("minPitchAngle", minPitchAngle);
   nh->declare_parameter<bool>("use_l1_go2IMU", use_l1_go2IMU);
+  nh->declare_parameter<int>("boundaryBandLayers", boundaryBandLayers);
+  nh->declare_parameter<int>("outerBandLayers", outerBandLayers);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -304,6 +310,8 @@ int main(int argc, char **argv) {
   nh->get_parameter("maxPitchAngle", maxPitchAngle);
   nh->get_parameter("minPitchAngle", minPitchAngle);
   nh->get_parameter("use_l1_go2IMU", use_l1_go2IMU);
+  nh->get_parameter("boundaryBandLayers", boundaryBandLayers);
+  nh->get_parameter("outerBandLayers", outerBandLayers);
 
   // 根据参数设置机器人本体尺寸
   if (use_l1_go2IMU) {
@@ -541,7 +549,7 @@ int main(int argc, char **argv) {
 
                 float dis4 = sqrt(pointX4 * pointX4 + pointY4 * pointY4);
                 float angle4 = atan2(pointZ4, dis4) * 180.0 / PI;
-                if (angle4 > minDyObsVFOV && angle4 < maxDyObsVFOV || fabs(pointZ4) < absDyObsRelZThre) {
+                if ((angle4 > minDyObsVFOV && angle4 < maxDyObsVFOV) || fabs(pointZ4) < absDyObsRelZThre) {
                   planarVoxelDyObs[planarVoxelWidth * indX + indY]++;
                 }
               }
@@ -757,37 +765,76 @@ int main(int argc, char **argv) {
             int indX = int(i / planarVoxelWidth);
             int indY = i % planarVoxelWidth;
 
-            // 计算当前点到机器人本体矩形边界的最小距离
-            float dx = 0.0f;
-            float dy = 0.0f;
-            
-            // X方向距离计算（pointX2已经是相对于机器人中心的距离）
-            if (pointX2 < robotBodyMinX) {
-                dx = robotBodyMinX - pointX2;  // 点在本体左边界外
-            } else if (pointX2 > robotBodyMaxX) {
-                dx = pointX2 - robotBodyMaxX;  // 点在本体右边界外
-            }
-            
-            // Y方向距离计算（pointY2已经是相对于机器人中心的距离）
-            if (pointY2 < robotBodyMinY) {
-                dy = robotBodyMinY - pointY2;  // 点在本体后边界外
-            } else if (pointY2 > robotBodyMaxY) {
-                dy = pointY2 - robotBodyMaxY;  // 点在本体前边界外
-            }
-            
-            // 计算到边界的最短距离
-            float distToRobotBoundary = sqrt(dx*dx + dy*dy);
 
-            // 从机器人本体边界开始，只保留最近的2层虚拟障碍物
-            if (distToRobotBoundary <= 2 * planarVoxelSize) {
-                point.x = planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
-                point.y = planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
-                point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
-                point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
 
-                // 只生成一个中心点
-                terrainCloudElev->push_back(point);
-            }
+            // 计算体素中心点坐标（原逻辑）
+            point.x =
+                planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
+            point.y =
+                planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
+            point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
+            point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
+
+            // // 在体素内添加4个点形成正方形
+            // point.x -= planarVoxelSize / 4.0;
+            // point.y -= planarVoxelSize / 4.0;
+            // terrainCloudElev->push_back(point);
+
+            // point.x += planarVoxelSize / 2.0;
+            // terrainCloudElev->push_back(point);
+
+            // point.y += planarVoxelSize / 2.0;
+            // terrainCloudElev->push_back(point);
+
+            // point.x -= planarVoxelSize / 2.0;
+            // terrainCloudElev->push_back(point);
+
+
+            // 不添加4个点，只发布中心
+            terrainCloudElev->push_back(point);
+
+
+            // // 计算体素在局部坐标系中的位置（新逻辑）
+            // float pointX1 = planarVoxelSize * (indX - planarVoxelHalfWidth);
+            // float pointY1 = planarVoxelSize * (indY - planarVoxelHalfWidth);
+            // // 将局部坐标转换到车辆坐标系（得到与机器人中心的相对坐标）
+            // float pointX2 = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
+            // float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+
+            // // 仅保留：
+            // // 1) 本体矩形的边界带（厚度 = boundaryBandLayers * planarVoxelSize）
+            // // 2) 向外扩展 outerBandLayers 层（厚度 = outerBandLayers * planarVoxelSize）的环带
+            // const float innerMinX = robotBodyMinX + boundaryBandLayers * planarVoxelSize;
+            // const float innerMaxX = robotBodyMaxX - boundaryBandLayers * planarVoxelSize;
+            // const float innerMinY = robotBodyMinY + boundaryBandLayers * planarVoxelSize;
+            // const float innerMaxY = robotBodyMaxY - boundaryBandLayers * planarVoxelSize;
+
+            // const float expMinX = robotBodyMinX - outerBandLayers * planarVoxelSize;
+            // const float expMaxX = robotBodyMaxX + outerBandLayers * planarVoxelSize;
+            // const float expMinY = robotBodyMinY - outerBandLayers * planarVoxelSize;
+            // const float expMaxY = robotBodyMaxY + outerBandLayers * planarVoxelSize;
+
+            // const bool insideOriginal = (pointX2 >= robotBodyMinX && pointX2 <= robotBodyMaxX &&
+            //                              pointY2 >= robotBodyMinY && pointY2 <= robotBodyMaxY);
+            // const bool insideInner = (pointX2 > innerMinX && pointX2 < innerMaxX &&
+            //                           pointY2 > innerMinY && pointY2 < innerMaxY);
+            // const bool boundaryBand = (insideOriginal && !insideInner);
+
+            // const bool insideExpanded = (pointX2 >= expMinX && pointX2 <= expMaxX &&
+            //                              pointY2 >= expMinY && pointY2 <= expMaxY);
+            // const bool outerBand = (insideExpanded && !insideOriginal);
+
+            // if (boundaryBand || outerBand) {
+            //     point.x = planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
+            //     point.y = planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
+            //     point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
+            //     point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
+
+            //     // 只生成一个中心点
+            //     terrainCloudElev->push_back(point);
+            // }
+
+
           }
         }
       }
