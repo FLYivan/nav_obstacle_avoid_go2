@@ -70,6 +70,9 @@ void SensorCoveragePlanner3D::ReadParameters() {
   this->declare_parameter<double>("kLookAheadDistance", 5.0);
   this->declare_parameter<double>("kExtendWayPointDistanceBig", 8.0);
   this->declare_parameter<double>("kExtendWayPointDistanceSmall", 3.0);
+  this->declare_parameter<double>("kTraversableIntensityMin", -0.05);
+  this->declare_parameter<double>("kTraversableIntensityMax", 0.15);
+  this->declare_parameter<double>("kSnapToTerrainRadius", 0.1);
 
   // Int
   this->declare_parameter<int>("kDirectionChangeCounterThr", 4);
@@ -219,6 +222,9 @@ void SensorCoveragePlanner3D::ReadParameters() {
 
   this->get_parameter("kKeyposeCloudDwzFilterLeafSize",
                       kKeyposeCloudDwzFilterLeafSize);
+  this->get_parameter("kTraversableIntensityMin", kTraversableIntensityMin_);
+  this->get_parameter("kTraversableIntensityMax", kTraversableIntensityMax_);
+  this->get_parameter("kSnapToTerrainRadius", kSnapToTerrainRadius_);
   this->get_parameter("kRushHomeDist", kRushHomeDist);
   this->get_parameter("kAtHomeDistThreshold", kAtHomeDistThreshold);
   this->get_parameter("kTerrainCollisionThreshold", kTerrainCollisionThreshold);
@@ -254,6 +260,9 @@ void SensorCoveragePlanner3D::InitializeData() {
   large_terrain_cloud_ =
       std::make_shared<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>(
           shared_from_this(), "terrain_cloud_large", kWorldFrameID);
+  terrain_map_cloud_ =
+      std::make_shared<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>(
+          shared_from_this(), "terrain_map_cloud", kWorldFrameID);
   terrain_collision_cloud_ =
       std::make_shared<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>(
           shared_from_this(), "terrain_collision_cloud", kWorldFrameID);
@@ -564,13 +573,12 @@ void SensorCoveragePlanner3D::TerrainMapCallback(
   // 3、安全性考虑：通过两个回调分别处理，即使一个话题出现延迟或丢失，另一个仍能保证基本的碰撞检测功能
 
     const sensor_msgs::msg::PointCloud2::ConstSharedPtr terrain_map_msg) {
+  // 保存完整的terrain_map点云，用于候选视点投影
+  pcl::fromROSMsg<pcl::PointXYZI>(*terrain_map_msg, *(terrain_map_cloud_->cloud_));
+  
   if (kCheckTerrainCollision) {
-    pcl::PointCloud<pcl::PointXYZI>::Ptr terrain_map_tmp(
-        new pcl::PointCloud<pcl::PointXYZI>());
-    pcl::fromROSMsg<pcl::PointXYZI>(*terrain_map_msg, *terrain_map_tmp);
     terrain_collision_cloud_->cloud_->clear();
-    for (auto &point : terrain_map_tmp->points) {
-
+    for (auto &point : terrain_map_cloud_->cloud_->points) {
       // 根据点的intensity值（代表高度差）筛选出可能造成碰撞的点
       if (point.intensity > kTerrainCollisionThreshold) {
         terrain_collision_cloud_->cloud_->points.push_back(point);
@@ -752,6 +760,48 @@ int SensorCoveragePlanner3D::UpdateViewPoints() {
   viewpoint_manager_->CheckViewPointLineOfSight();
   viewpoint_manager_->CheckViewPointConnectivity();
   int viewpoint_candidate_count = viewpoint_manager_->GetViewPointCandidate();
+
+  // 对所有候选视点进行 terrain_map 投影筛选（在源头处理）
+  // 这样所有后续使用候选视点的地方（local_path、lookahead_point、waypoint等）都会自动使用投影后的位置
+  if (viewpoint_candidate_count > 0) {
+    int snapped_count = 0;
+    int failed_count = 0;
+    
+    RCLCPP_INFO(this->get_logger(), 
+                "Filtering %zu candidate viewpoints with terrain_map projection", 
+                viewpoint_manager_->candidate_indices_.size());
+    
+    // 从后向前遍历，方便移除元素
+    for (int i = viewpoint_manager_->candidate_indices_.size() - 1; i >= 0; i--) {
+      int viewpoint_ind = viewpoint_manager_->candidate_indices_[i];
+      geometry_msgs::msg::Point original_pos = viewpoint_manager_->GetViewPointPosition(viewpoint_ind);
+      geometry_msgs::msg::Point snapped_pos = original_pos;
+      
+      if (SnapViewPointToTraversableTerrain(snapped_pos)) {
+        // 投影成功，更新候选视点位置
+        viewpoint_manager_->SetViewPointPosition(viewpoint_ind, snapped_pos);
+        snapped_count++;
+        RCLCPP_DEBUG(this->get_logger(), 
+                     "Candidate viewpoint %d snapped: (%.2f, %.2f) -> (%.2f, %.2f)", 
+                     viewpoint_ind, original_pos.x, original_pos.y, snapped_pos.x, snapped_pos.y);
+      } else {
+        // 投影失败，从候选列表中移除
+        viewpoint_manager_->SetViewPointCandidate(viewpoint_ind, false);
+        viewpoint_manager_->candidate_indices_.erase(viewpoint_manager_->candidate_indices_.begin() + i);
+        failed_count++;
+        RCLCPP_DEBUG(this->get_logger(),
+                     "Candidate viewpoint %d at (%.2f, %.2f, %.2f) removed: outside terrain_map coverage", 
+                     viewpoint_ind, original_pos.x, original_pos.y, original_pos.z);
+      }
+    }
+    
+    // 重新统计候选视点数量
+    viewpoint_candidate_count = viewpoint_manager_->candidate_indices_.size();
+    
+    RCLCPP_INFO(this->get_logger(), 
+                "Candidate viewpoints terrain filtering: %d snapped, %d removed, %d remaining", 
+                snapped_count, failed_count, viewpoint_candidate_count);
+  }
 
   UpdateVisitedPositions();
   viewpoint_manager_->UpdateViewPointVisited(visited_positions_);
@@ -1610,4 +1660,75 @@ void SensorCoveragePlanner3D::execute() {
     PublishRuntime();
   }
 }
+
+bool SensorCoveragePlanner3D::IsTerrainPointTraversable(const pcl::PointXYZI &point) const {
+  return point.intensity >= kTraversableIntensityMin_ && 
+         point.intensity <= kTraversableIntensityMax_;
+}
+
+bool SensorCoveragePlanner3D::SnapViewPointToTraversableTerrain(geometry_msgs::msg::Point &viewpoint_position) {
+  // 严格使用 terrain_map_cloud_ (来自/terrain_map，近距离高精度)
+  // 如果候选视点不在terrain_map覆盖范围内，则投影失败，该候选视点将被移除
+  if (!terrain_map_cloud_ || !terrain_map_cloud_->cloud_ || 
+      terrain_map_cloud_->cloud_->points.empty()) {
+    RCLCPP_WARN_THROTTLE(this->get_logger(), *this->get_clock(), 5000, 
+                         "Terrain map cloud is empty, cannot snap viewpoint");
+    return false;
+  }
+
+  // Find the closest traversable point in XY plane only
+  int best_idx = -1;
+  float best_dist_xy = std::numeric_limits<float>::max();
+  int total_traversable_count = 0;
+  int within_radius_count = 0;
+  
+  for (size_t i = 0; i < terrain_map_cloud_->cloud_->points.size(); ++i) {
+    const auto &terrain_point = terrain_map_cloud_->cloud_->points[i];
+    
+    // Check if this point is traversable (intensity check)
+    if (!IsTerrainPointTraversable(terrain_point)) {
+      continue;
+    }
+    
+    total_traversable_count++;
+    
+    // Calculate XY plane distance only (ignore Z axis)
+    float dx = terrain_point.x - viewpoint_position.x;
+    float dy = terrain_point.y - viewpoint_position.y;
+    float dist_xy = sqrt(dx * dx + dy * dy);
+    
+    // Check if within search radius and closer than previous best
+    if (dist_xy <= kSnapToTerrainRadius_) {
+      within_radius_count++;
+      if (dist_xy < best_dist_xy) {
+        best_dist_xy = dist_xy;
+        best_idx = i;
+      }
+    }
+  }
+
+  if (best_idx < 0) {
+    RCLCPP_DEBUG(this->get_logger(), 
+                 "No traversable terrain point found within XY radius %.2fm for viewpoint (%.2f, %.2f, %.2f). "
+                 "Total terrain points: %zu, traversable: %d, within radius: %d. "
+                 "This viewpoint is outside terrain_map coverage and will be removed.", 
+                 kSnapToTerrainRadius_, viewpoint_position.x, viewpoint_position.y, viewpoint_position.z,
+                 terrain_map_cloud_->cloud_->points.size(), total_traversable_count, within_radius_count);
+    return false;
+  }
+
+  // Snap to the best traversable point (use its X, Y values, keep original Z)
+  const auto &best_point = terrain_map_cloud_->cloud_->points[best_idx];
+  double original_z = viewpoint_position.z;  // 保存原始Z值
+  viewpoint_position.x = best_point.x;
+  viewpoint_position.y = best_point.y;
+  // viewpoint_position.z保持不变，使用原始值
+
+  RCLCPP_DEBUG(this->get_logger(), 
+               "Snapped viewpoint to traversable terrain point (%.2f, %.2f, %.2f->%.2f) with intensity %.3f, XY distance %.3fm",
+               best_point.x, best_point.y, best_point.z, original_z, best_point.intensity, best_dist_xy);
+
+  return true;
+}
+
 } // namespace sensor_coverage_planner_3d_ns

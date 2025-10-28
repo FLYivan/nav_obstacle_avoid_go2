@@ -30,6 +30,9 @@ tare_planner_node:
     kAtHomeDistThreshold : 0.5
     kTerrainCollisionThreshold : 0.5             # 原值0.5,intensity超过这个值的点，将不被viewpoint选中
     kLookAheadDistance : 8.0
+    kTraversableIntensityMin : -0.05
+    kTraversableIntensityMax : 0.15
+    kSnapToTerrainRadius : 0.1
     kUseMomentum : false 
     kDirectionChangeCounterThr : 6
     kDirectionNoChangeCounterThr : 5

@@ -111,6 +111,9 @@ private:
   double kExtendWayPointDistanceBig;
   double kExtendWayPointDistanceSmall;
   double kViewPointHeightFromTerrain_;
+  double kTraversableIntensityMin_;
+  double kTraversableIntensityMax_;
+  double kSnapToTerrainRadius_;
 
   // Int
   int kDirectionChangeCounterThr;
@@ -125,6 +128,8 @@ private:
       registered_cloud_;
   std::shared_ptr<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>
       large_terrain_cloud_;
+  std::shared_ptr<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>
+      terrain_map_cloud_;  // terrain_map点云，用于候选视点投影（近距离、高精度）
   std::shared_ptr<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>
       terrain_collision_cloud_;
   std::shared_ptr<pointcloud_utils_ns::PCLCloud<pcl::PointXYZI>>
@@ -310,6 +315,11 @@ private:
 
   void PrintExplorationStatus(std::string status, bool clear_last_line = true);
   void CountDirectionChange();
+  
+  // 将视点投影到最近的可通行地形点
+  bool SnapViewPointToTraversableTerrain(geometry_msgs::msg::Point &viewpoint_position);
+  // 判断地形点是否可通行
+  bool IsTerrainPointTraversable(const pcl::PointXYZI &point) const;
 };
 
 } // namespace sensor_coverage_planner_3d_ns
