@@ -190,3 +190,19 @@ void SportClient::Dance2(unitree_api::msg::Request &req)
 {
     req.header.identity.api_id = ROBOT_SPORT_API_ID_DANCE2;
 }
+
+void SportClient::FreeWalk(unitree_api::msg::Request &req, bool flag)
+{
+    nlohmann::json js;
+    js["data"] = flag;
+    req.parameter = js.dump();
+    req.header.identity.api_id = ROBOT_SPORT_API_ID_FREEWALK;
+}
+
+void SportClient::ClassicWalk(unitree_api::msg::Request &req, bool flag)
+{
+    nlohmann::json js;
+    js["data"] = flag;
+    req.parameter = js.dump();
+    req.header.identity.api_id = ROBOT_SPORT_API_ID_CLASSICWALK;
+}

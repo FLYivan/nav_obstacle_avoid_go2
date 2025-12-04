@@ -52,9 +52,9 @@ double minDyObsVFOV = -16.0;
 double maxDyObsVFOV = 16.0;
 int minDyObsPointNum = 1;
 bool noDataObstacle = false;
-int noDataBlockSkipNum = 0;
+int noDataBlockSkipNum = 0;   // 无点云区域体素跳过数量，跳过这个数量的体素，不进行处理
 int minBlockPointNum = 10;
-int maxBlockPointNum = 0;
+int NoBlindMinPointNum = 0;   // 非盲区原因，大于这个数量点云的体素，才去考虑是否评估向下落差
 int terrainMinPointNum = 10;
 double maxElevBelowVeh = -0.6;
 double noDataAreaMinX = 0.3;
@@ -78,7 +78,7 @@ const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;
 
 // planar voxel parameters
 float planarVoxelSize = 0.2;
-const int planarVoxelWidth = 51;
+int planarVoxelWidth = 51;
 int planarVoxelHalfWidth = (planarVoxelWidth - 1) / 2;
 const int planarVoxelNum = planarVoxelWidth * planarVoxelWidth;
 
@@ -252,7 +252,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<bool>("noDataObstacle", noDataObstacle);
   nh->declare_parameter<int>("noDataBlockSkipNum", noDataBlockSkipNum);
   nh->declare_parameter<int>("minBlockPointNum", minBlockPointNum);
-  nh->declare_parameter<int>("maxBlockPointNum", maxBlockPointNum);
+  nh->declare_parameter<int>("NoBlindMinPointNum", NoBlindMinPointNum);
   nh->declare_parameter<int>("terrainMinPointNum", terrainMinPointNum);
   nh->declare_parameter<double>("maxElevBelowVeh", maxElevBelowVeh);
   nh->declare_parameter<double>("noDataAreaMinX", noDataAreaMinX);
@@ -271,6 +271,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<bool>("use_l1_go2IMU", use_l1_go2IMU);
   nh->declare_parameter<int>("boundaryBandLayers", boundaryBandLayers);
   nh->declare_parameter<int>("outerBandLayers", outerBandLayers);
+  nh->declare_parameter<int>("planarVoxelWidth", planarVoxelWidth);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -293,7 +294,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("noDataObstacle", noDataObstacle);
   nh->get_parameter("noDataBlockSkipNum", noDataBlockSkipNum);
   nh->get_parameter("minBlockPointNum", minBlockPointNum);
-  nh->get_parameter("maxBlockPointNum", maxBlockPointNum);
+  nh->get_parameter("NoBlindMinPointNum", NoBlindMinPointNum);
   nh->get_parameter("terrainMinPointNum", terrainMinPointNum);
   nh->get_parameter("maxElevBelowVeh", maxElevBelowVeh);
   nh->get_parameter("noDataAreaMinX", noDataAreaMinX);
@@ -312,6 +313,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("use_l1_go2IMU", use_l1_go2IMU);
   nh->get_parameter("boundaryBandLayers", boundaryBandLayers);
   nh->get_parameter("outerBandLayers", outerBandLayers);
+  nh->get_parameter("planarVoxelWidth", planarVoxelWidth);
 
   // 根据参数设置机器人本体尺寸
   if (use_l1_go2IMU) {
@@ -609,7 +611,7 @@ int main(int argc, char **argv) {
                 limitGroundLift) {
               planarVoxelElev[i] = planarPointElev[i][0] + maxGroundLift;
             } else {
-              planarVoxelElev[i] = planarPointElev[i][quantileID];  //9选择25%位置的点的高度作为这个体素的地面高度
+              planarVoxelElev[i] = planarPointElev[i][quantileID];  // 当前逻辑：选择25%位置的点的高度作为这个体素的地面高度
             }
           }
         }
@@ -686,8 +688,8 @@ int main(int argc, char **argv) {
           float pointY1 = planarVoxelSize * (indY - planarVoxelHalfWidth);
 
           // 将局部坐标转换到车辆坐标系
-          float pointX2 = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
-          float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
+          float pointX2 = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;      // 第i个体素格子的中心在车辆坐标系中的x坐标
+          float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;     // 第i个体素格子的中心在车辆坐标系中的y坐标
 
           // 判断是否在平地（使用已有的vehiclePitch变量）
           bool isOnFlatGround = (vehiclePitch > minPitchAngle && vehiclePitch < maxPitchAngle);
@@ -711,14 +713,16 @@ int main(int argc, char **argv) {
             
             // 只有不在机器人本体区域内的点才进行处理
             if (!isInRobotBody) {
-                int planarPointElevSize = planarPointElev[i].size();
+                int planarPointElevSize = planarPointElev[i].size();    // 获取第i个体素格子中点云数据的数量
 
                 // 只在x轴负半轴区域(pointX2 < 0)检查点云数量条件
                 if (
-                  (pointX2 < 0 && planarPointElevSize < minBlockPointNum) || 
-                    (planarPointElevSize > maxBlockPointNum && 
-                     planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) {
-                    planarVoxelEdge[i] = 1;
+                  (pointX2 < 0 && planarPointElevSize < minBlockPointNum) ||                                    // 雷达盲区（受雷达按照角度限制，只判断X负方向）
+
+                  // 第i个体素格子的高度-车辆高度 < 最大允许高度差（-0.6）
+                  (planarPointElevSize > NoBlindMinPointNum && planarVoxelElev[i] - vehicleZ < maxElevBelowVeh)) // 非雷达盲区 + 凹陷区域
+                {
+                    planarVoxelEdge[i] = 1;  // 将第i个体素的边缘值设置为1
                 }
             }
           }
@@ -726,7 +730,7 @@ int main(int argc, char **argv) {
 
         // 对边缘进行多次扩展
         for (int noDataBlockSkipCount = 0;
-             noDataBlockSkipCount < noDataBlockSkipNum;
+             noDataBlockSkipCount < noDataBlockSkipNum;   // 循环 noDataBlockSkipNum 次，每次将边缘向内扩展一层
              noDataBlockSkipCount++) {
           // 遍历所有体素
           for (int i = 0; i < planarVoxelNum; i++) {
@@ -739,7 +743,7 @@ int main(int argc, char **argv) {
                 for (int dY = -1; dY <= 1; dY++) {
                   if (indX + dX >= 0 && indX + dX < planarVoxelWidth &&
                       indY + dY >= 0 && indY + dY < planarVoxelWidth) {
-                    // 如果邻居体素的边缘值更小,则当前体素为边缘
+                    // 如果8个邻居体素存在边缘值更小的体素,则当前体素为边缘
                     if (planarVoxelEdge[planarVoxelWidth * (indX + dX) + indY +
                                         dY] < planarVoxelEdge[i]) {
                       edgeVoxel = true;
@@ -756,12 +760,13 @@ int main(int argc, char **argv) {
         }
         
         // 初始边缘体素（边缘值=1）：标记出可能有风险的区域
-        // 边缘值的扩展：通过多次迭代，识别出无数据区域的"内部"
-        // 最终只在边缘值较大的体素中添加虚拟障碍点：
+        // 边缘值的扩展：通过noDataBlockSkipNum次迭代，识别出无数据区域的"内部"
+        // 最终只将边缘值较大的内部体素中添加虚拟障碍点
+        // 但目前边缘扩展功能没有启用
 
         // 为边缘体素添加虚拟障碍点
         for (int i = 0; i < planarVoxelNum; i++) {
-          if (planarVoxelEdge[i] > noDataBlockSkipNum) {
+          if (planarVoxelEdge[i] == noDataBlockSkipNum) {        // 只保留边缘体素，即planarVoxelEdge[i]=1的体素
             int indX = int(i / planarVoxelWidth);
             int indY = i % planarVoxelWidth;
 
@@ -775,7 +780,7 @@ int main(int argc, char **argv) {
             point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
             point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
 
-            // // 在体素内添加4个点形成正方形
+            // // 将当前第i个体素格子，切成一个“田字格”，取田字格中每个小格子的中心点，发布为虚拟障碍点
             // point.x -= planarVoxelSize / 4.0;
             // point.y -= planarVoxelSize / 4.0;
             // terrainCloudElev->push_back(point);
@@ -792,47 +797,6 @@ int main(int argc, char **argv) {
 
             // 不添加4个点，只发布中心
             terrainCloudElev->push_back(point);
-
-
-            // // 计算体素在局部坐标系中的位置（新逻辑）
-            // float pointX1 = planarVoxelSize * (indX - planarVoxelHalfWidth);
-            // float pointY1 = planarVoxelSize * (indY - planarVoxelHalfWidth);
-            // // 将局部坐标转换到车辆坐标系（得到与机器人中心的相对坐标）
-            // float pointX2 = pointX1 * cosVehicleYaw + pointY1 * sinVehicleYaw;
-            // float pointY2 = -pointX1 * sinVehicleYaw + pointY1 * cosVehicleYaw;
-
-            // // 仅保留：
-            // // 1) 本体矩形的边界带（厚度 = boundaryBandLayers * planarVoxelSize）
-            // // 2) 向外扩展 outerBandLayers 层（厚度 = outerBandLayers * planarVoxelSize）的环带
-            // const float innerMinX = robotBodyMinX + boundaryBandLayers * planarVoxelSize;
-            // const float innerMaxX = robotBodyMaxX - boundaryBandLayers * planarVoxelSize;
-            // const float innerMinY = robotBodyMinY + boundaryBandLayers * planarVoxelSize;
-            // const float innerMaxY = robotBodyMaxY - boundaryBandLayers * planarVoxelSize;
-
-            // const float expMinX = robotBodyMinX - outerBandLayers * planarVoxelSize;
-            // const float expMaxX = robotBodyMaxX + outerBandLayers * planarVoxelSize;
-            // const float expMinY = robotBodyMinY - outerBandLayers * planarVoxelSize;
-            // const float expMaxY = robotBodyMaxY + outerBandLayers * planarVoxelSize;
-
-            // const bool insideOriginal = (pointX2 >= robotBodyMinX && pointX2 <= robotBodyMaxX &&
-            //                              pointY2 >= robotBodyMinY && pointY2 <= robotBodyMaxY);
-            // const bool insideInner = (pointX2 > innerMinX && pointX2 < innerMaxX &&
-            //                           pointY2 > innerMinY && pointY2 < innerMaxY);
-            // const bool boundaryBand = (insideOriginal && !insideInner);
-
-            // const bool insideExpanded = (pointX2 >= expMinX && pointX2 <= expMaxX &&
-            //                              pointY2 >= expMinY && pointY2 <= expMaxY);
-            // const bool outerBand = (insideExpanded && !insideOriginal);
-
-            // if (boundaryBand || outerBand) {
-            //     point.x = planarVoxelSize * (indX - planarVoxelHalfWidth) + vehicleX;
-            //     point.y = planarVoxelSize * (indY - planarVoxelHalfWidth) + vehicleY;
-            //     point.z = vehicleZ;                 // 对于无点云点，z默认设置为车辆高度
-            //     point.intensity = vehicleHeight;    // 对于无点云点，intensity设置很大
-
-            //     // 只生成一个中心点
-            //     terrainCloudElev->push_back(point);
-            // }
 
 
           }

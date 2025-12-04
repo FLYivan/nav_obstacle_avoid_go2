@@ -38,6 +38,9 @@ const int32_t ROBOT_SPORT_API_ID_SCRAPE = 1029;
 const int32_t ROBOT_SPORT_API_ID_FRONTFLIP = 1030;
 const int32_t ROBOT_SPORT_API_ID_FRONTJUMP = 1031;
 const int32_t ROBOT_SPORT_API_ID_FRONTPOUNCE = 1032;
+const int32_t ROBOT_SPORT_API_ID_FREEWALK = 2045;
+const int32_t ROBOT_SPORT_API_ID_CLASSICWALK = 2049;
+
 
 typedef struct
 {
@@ -226,6 +229,20 @@ public:
      * @api: 1023
      */
     void Dance2(unitree_api::msg::Request &req);
+
+    /*
+     * @brief FreeWalk
+     * @api: 2045
+     */
+    void FreeWalk(unitree_api::msg::Request &req, bool flag);
+    /*
+     * @brief ClassicWalk
+     * @api: 2049
+     */
+    void ClassicWalk(unitree_api::msg::Request &req, bool flag);
+
+    /*W
+    /*
 };
 
 #endif
