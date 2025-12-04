@@ -240,9 +240,6 @@ public:
      * @api: 2049
      */
     void ClassicWalk(unitree_api::msg::Request &req, bool flag);
-
-    /*W
-    /*
 };
 
 #endif

@@ -78,7 +78,7 @@ const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;
 
 // planar voxel parameters
 float planarVoxelSize = 0.2;
-int planarVoxelWidth = 51;
+const int planarVoxelWidth = 51;
 int planarVoxelHalfWidth = (planarVoxelWidth - 1) / 2;
 const int planarVoxelNum = planarVoxelWidth * planarVoxelWidth;
 
@@ -271,7 +271,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<bool>("use_l1_go2IMU", use_l1_go2IMU);
   nh->declare_parameter<int>("boundaryBandLayers", boundaryBandLayers);
   nh->declare_parameter<int>("outerBandLayers", outerBandLayers);
-  nh->declare_parameter<int>("planarVoxelWidth", planarVoxelWidth);
+  // nh->declare_parameter<int>("planarVoxelWidth", planarVoxelWidth);
 
 
   nh->get_parameter("scanVoxelSize", scanVoxelSize);
@@ -313,7 +313,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("use_l1_go2IMU", use_l1_go2IMU);
   nh->get_parameter("boundaryBandLayers", boundaryBandLayers);
   nh->get_parameter("outerBandLayers", outerBandLayers);
-  nh->get_parameter("planarVoxelWidth", planarVoxelWidth);
+  // nh->get_parameter("planarVoxelWidth", planarVoxelWidth);
 
   // 根据参数设置机器人本体尺寸
   if (use_l1_go2IMU) {
