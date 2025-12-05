@@ -78,7 +78,7 @@ const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;
 
 // planar voxel parameters
 float planarVoxelSize = 0.2;
-const int planarVoxelWidth = 51;
+const int planarVoxelWidth = 91;
 int planarVoxelHalfWidth = (planarVoxelWidth - 1) / 2;
 const int planarVoxelNum = planarVoxelWidth * planarVoxelWidth;
 
@@ -231,6 +231,10 @@ int outerBandLayers = 1;     // 本体外扩的环带层数
 int main(int argc, char **argv) {
   rclcpp::init(argc, argv);
   auto nh = rclcpp::Node::make_shared("terrainAnalysis");
+
+  RCLCPP_INFO(nh->get_logger(), "planarVoxelWidth: %d", planarVoxelWidth);
+  RCLCPP_INFO(nh->get_logger(), "planarVoxelHalfWidth: %d", planarVoxelHalfWidth);
+  RCLCPP_INFO(nh->get_logger(), "planarVoxelNum: %d", planarVoxelNum);
 
   nh->declare_parameter<double>("scanVoxelSize", scanVoxelSize);
   nh->declare_parameter<double>("decayTime", decayTime);

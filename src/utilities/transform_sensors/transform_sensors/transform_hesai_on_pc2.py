@@ -6,6 +6,15 @@ from sensor_msgs.msg import Imu  # 导入IMU消息类型
 from sensor_msgs.msg import PointCloud2, PointField  # 导入点云消息类型
 from geometry_msgs.msg import TransformStamped, Vector3  # 导入变换和向量消息类型
 import sensor_msgs_py.point_cloud2 as pc2  # 导入点云处理工具
+
+# 修复 NumPy 兼容性问题：在导入 transforms3d 之前添加 np.float 别名
+import numpy as np  # 导入numpy库
+if not hasattr(np, 'float'):
+    np.float = np.float64
+    np.int = np.int_
+    np.complex = np.complex_
+    np.bool = np.bool_
+
 import tf_transformations  # 导入TF变换工具
 
 from rclpy.qos import QoSProfile, QoSReliabilityPolicy, QoSHistoryPolicy, QoSDurabilityPolicy
@@ -14,7 +23,6 @@ from transforms3d.quaternions import quat2mat  # 导入四元数到矩阵转换�
 from unitree_go.msg import SportModeState
 
 from copy import deepcopy  # 导入深拷贝工具
-import numpy as np  # 导入numpy库
 import yaml  # 导入YAML解析库
 
 import os  # 导入操作系统接口

@@ -6,12 +6,20 @@ from sensor_msgs.msg import Imu
 from sensor_msgs.msg import PointCloud2, PointField
 from geometry_msgs.msg import TransformStamped, Vector3
 import sensor_msgs_py.point_cloud2 as pc2
+
+# 修复 NumPy 兼容性问题：在导入 transforms3d 之前添加 np.float 别名
+import numpy as np
+if not hasattr(np, 'float'):
+    np.float = np.float64
+    np.int = np.int_
+    np.complex = np.complex_
+    np.bool = np.bool_
+
 import tf_transformations
 
 from transforms3d.quaternions import quat2mat
 
 from copy import deepcopy
-import numpy as np
 import yaml
 
 import os
