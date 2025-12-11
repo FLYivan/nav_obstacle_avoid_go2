@@ -46,7 +46,7 @@ bool TAREVisualizer::ReadParameters(rclcpp::Node::SharedPtr nh)
   kLocalPlanningHorizonMarkerColor.g = nh->get_parameter("kLocalPlanningHorizonMarkerColorG").as_double();
   kLocalPlanningHorizonMarkerColor.b = nh->get_parameter("kLocalPlanningHorizonMarkerColorB").as_double();
   kLocalPlanningHorizonMarkerColor.a = nh->get_parameter("kLocalPlanningHorizonMarkerColorA").as_double();
-  nh->get_parameter("kLocalPlanningHorizonMarkerColorA", kLocalPlanningHorizonMarkerWidth);
+  nh->get_parameter("kLocalPlanningHorizonMarkerWidth", kLocalPlanningHorizonMarkerWidth);
   int viewpoint_num_x = nh->get_parameter("viewpoint_manager/number_x").as_int();
   int viewpoint_num_y = nh->get_parameter("viewpoint_manager/number_y").as_int();
   double viewpoint_resolution_x = nh->get_parameter("viewpoint_manager/resolution_x").as_double();

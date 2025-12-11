@@ -75,6 +75,7 @@ int terrainVoxelShiftY = 0;
 const int terrainVoxelWidth = 41; // 决定初始体素地图的宽度
 int terrainVoxelHalfWidth = (terrainVoxelWidth - 1) / 2;    // 决定terrainCloud 的提取范围
 const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;
+int terrainCloudExtractRange = 5;  // terrainCloud提取范围，从中心向四周扩展的体素数量
 
 // planar voxel parameters
 float planarVoxelSize = 0.2;
@@ -275,6 +276,7 @@ int main(int argc, char **argv) {
   nh->declare_parameter<bool>("use_l1_go2IMU", use_l1_go2IMU);
   nh->declare_parameter<int>("boundaryBandLayers", boundaryBandLayers);
   nh->declare_parameter<int>("outerBandLayers", outerBandLayers);
+  nh->declare_parameter<int>("terrainCloudExtractRange", terrainCloudExtractRange);
   // nh->declare_parameter<int>("planarVoxelWidth", planarVoxelWidth);
 
 
@@ -317,6 +319,7 @@ int main(int argc, char **argv) {
   nh->get_parameter("use_l1_go2IMU", use_l1_go2IMU);
   nh->get_parameter("boundaryBandLayers", boundaryBandLayers);
   nh->get_parameter("outerBandLayers", outerBandLayers);
+  nh->get_parameter("terrainCloudExtractRange", terrainCloudExtractRange);
   // nh->get_parameter("planarVoxelWidth", planarVoxelWidth);
 
   // 根据参数设置机器人本体尺寸
@@ -480,10 +483,15 @@ int main(int argc, char **argv) {
       }
 
       terrainCloud->clear();
-      for (int indX = terrainVoxelHalfWidth - 5;
-           indX <= terrainVoxelHalfWidth + 5; indX++) {
-        for (int indY = terrainVoxelHalfWidth - 5;
-             indY <= terrainVoxelHalfWidth + 5; indY++) {
+      // 使用可配置参数控制提取范围，确保不超过边界
+      int extractRange = terrainCloudExtractRange;
+      if (extractRange > terrainVoxelHalfWidth) {
+        extractRange = terrainVoxelHalfWidth;
+      }
+      for (int indX = terrainVoxelHalfWidth - extractRange;
+           indX <= terrainVoxelHalfWidth + extractRange; indX++) {
+        for (int indY = terrainVoxelHalfWidth - extractRange;
+             indY <= terrainVoxelHalfWidth + extractRange; indY++) {
           *terrainCloud += *terrainVoxelCloud[terrainVoxelWidth * indX + indY];
         }
       }
