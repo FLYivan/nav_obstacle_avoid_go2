@@ -375,6 +375,7 @@ SensorCoveragePlanner3D::SensorCoveragePlanner3D()
       test_point_update_(false), viewpoint_ind_update_(false), step_(false),
       use_momentum_(false), lookahead_point_in_line_of_sight_(true),
       reset_waypoint_(false), registered_cloud_count_(0), keypose_count_(0),
+      use_viewpoint_mapping_(false),
       direction_change_count_(0), direction_no_change_count_(0),
       momentum_activation_count_(0), reset_waypoint_joystick_axis_value_(-1.0) {
   std::cout << "finished constructor" << std::endl;
@@ -1424,8 +1425,12 @@ void SensorCoveragePlanner3D::PublishWaypoint() {
     // 发布延伸后的waypoint
     waypoint.point.x = dx + robot_position_.x;
     waypoint.point.y = dy + robot_position_.y;
-    // waypoint.point.z = lookahead_point_.z() - kViewPointHeightFromTerrain_;
-    waypoint.point.z = lookahead_point_.z();
+
+    if (use_viewpoint_mapping_) {
+      waypoint.point.z = lookahead_point_.z();
+    } else {
+      waypoint.point.z = lookahead_point_.z() - kViewPointHeightFromTerrain_;
+    }
   }
   misc_utils_ns::Publish(shared_from_this(), waypoint_pub_, waypoint,
                          kWorldFrameID);
@@ -1705,6 +1710,7 @@ bool SensorCoveragePlanner3D::SnapViewPointToTraversableTerrain(geometry_msgs::m
 // 这样所有后续使用候选视点的地方（local_path、lookahead_point、waypoint等）都会自动使用投影后的位置
 int SensorCoveragePlanner3D::ProcessViewPointMapping(int viewpoint_candidate_count) {
   // 将视点位置投影到地形地图上
+  use_viewpoint_mapping_ = true;
   if (viewpoint_candidate_count > 0) {
     int snapped_count = 0;                        // 统计成功投影/贴到地形上的视点数量
     int failed_count = 0;                         // 统计投影失败/贴到地形上的视点数量
@@ -1738,14 +1744,17 @@ int SensorCoveragePlanner3D::ProcessViewPointMapping(int viewpoint_candidate_cou
     }
     
     // 重新统计候选视点数量
-    viewpoint_candidate_count_aftermapping = viewpoint_manager_->candidate_indices_.size();
+    int viewpoint_candidate_count_aftermapping = viewpoint_manager_->candidate_indices_.size();
     
     RCLCPP_INFO(this->get_logger(), 
                 "候选视点地形过滤: %d 个投影成功, %d 个被移除, 投影后候选视点剩余 %d 个",
                 snapped_count, failed_count, viewpoint_candidate_count_aftermapping);
 
     return viewpoint_candidate_count_aftermapping;
-
+  } else {
+    // 如果没有候选视点，直接返回0
+    return 0;
+  }
 }
 
 } // namespace sensor_coverage_planner_3d_ns

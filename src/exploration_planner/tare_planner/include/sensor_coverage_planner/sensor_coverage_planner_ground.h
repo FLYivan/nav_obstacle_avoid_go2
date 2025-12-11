@@ -199,6 +199,7 @@ private:
   bool use_momentum_;
   bool lookahead_point_in_line_of_sight_;
   bool reset_waypoint_;
+  bool use_viewpoint_mapping_; // 是否使用视点投影筛选
   pointcloud_utils_ns::PointCloudDownsizer<pcl::PointXYZ> pointcloud_downsizer_;
 
   int update_representation_runtime_;
@@ -320,6 +321,8 @@ private:
   bool SnapViewPointToTraversableTerrain(geometry_msgs::msg::Point &viewpoint_position);
   // 判断地形点是否可通行
   bool IsTerrainPointTraversable(const pcl::PointXYZI &point) const;
+  // 对所有候选视点进行地形投影筛选
+  int ProcessViewPointMapping(int viewpoint_candidate_count);
 };
 
 } // namespace sensor_coverage_planner_3d_ns
