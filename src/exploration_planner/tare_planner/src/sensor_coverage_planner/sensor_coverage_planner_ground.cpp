@@ -762,53 +762,9 @@ int SensorCoveragePlanner3D::UpdateViewPoints() {
   int viewpoint_candidate_count = viewpoint_manager_->GetViewPointCandidate();
 
 
-
-  // 对所有候选视点进行 terrain_map 投影筛选（在源头处理）
-  // 这样所有后续使用候选视点的地方（local_path、lookahead_point、waypoint等）都会自动使用投影后的位置
-  if (viewpoint_candidate_count > 0) {
-    int snapped_count = 0;                        // 统计成功投影/贴到地形上的视点数量
-    int failed_count = 0;                         // 统计投影失败/贴到地形上的视点数量
-    
-    RCLCPP_INFO(this->get_logger(), 
-                "对 %zu 个候选视点进行地形投影筛选",
-                viewpoint_manager_->candidate_indices_.size());         // candidate_indices_是候选视点的索引
-    
-    // 从后向前遍历，方便移除元素
-    for (int i = viewpoint_manager_->candidate_indices_.size() - 1; i >= 0; i--) {
-      int viewpoint_ind = viewpoint_manager_->candidate_indices_[i];
-      geometry_msgs::msg::Point original_pos = viewpoint_manager_->GetViewPointPosition(viewpoint_ind);       // 这次处理的视点在管理器中的编号
-      geometry_msgs::msg::Point snapped_pos = original_pos;       // 初始化为原始位置，后面如果投影成功，会被修改为“投影后”的可通行位置
-      
-      if (SnapViewPointToTraversableTerrain(snapped_pos)) {
-        // 投影成功，更新候选视点位置
-        viewpoint_manager_->SetViewPointPosition(viewpoint_ind, snapped_pos);     // 更新该视点在管理器中的位置
-        snapped_count++;
-        RCLCPP_DEBUG(this->get_logger(), 
-                     "候选视点 %d 投影成功: (%.2f, %.2f, %.2f) -> (%.2f, %.2f, %.2f)",
-                     viewpoint_ind, original_pos.x, original_pos.y, original_pos.z, snapped_pos.x, snapped_pos.y, snapped_pos.z);
-      } else {
-        // 投影失败，从候选列表中移除
-        viewpoint_manager_->SetViewPointCandidate(viewpoint_ind, false);
-        viewpoint_manager_->candidate_indices_.erase(viewpoint_manager_->candidate_indices_.begin() + i);
-        failed_count++;
-        RCLCPP_DEBUG(this->get_logger(),
-                     "候选视点 %d 位于 (%.2f, %.2f, %.2f) 被移除: 超出地形地图覆盖范围", 
-                     viewpoint_ind, original_pos.x, original_pos.y, original_pos.z);
-      }
-    }
-    
-    // 重新统计候选视点数量
-    viewpoint_candidate_count = viewpoint_manager_->candidate_indices_.size();
-    
-    RCLCPP_INFO(this->get_logger(), 
-                "候选视点地形过滤: %d 个投影成功, %d 个被移除, 投影后候选视点剩余 %d 个",
-                snapped_count, failed_count, viewpoint_candidate_count);
-  }
-
-
-
-
-
+  // -------------------调用候选视点地形吸附逻辑--------------------------------
+  // viewpoint_candidate_count = ProcessViewPointMapping(viewpoint_candidate_count);
+  // -------------------候选视点地形吸附逻辑结束--------------------------------
 
 
 
@@ -826,6 +782,7 @@ int SensorCoveragePlanner3D::UpdateViewPoints() {
   viewpoint_manager_update_timer.Stop(false);
   return viewpoint_candidate_count;
 }
+
 
 void SensorCoveragePlanner3D::UpdateViewPointCoverage() {
   // Update viewpoint coverage
@@ -1741,6 +1698,54 @@ bool SensorCoveragePlanner3D::SnapViewPointToTraversableTerrain(geometry_msgs::m
                best_point.x, best_point.y, best_point.z, original_z, best_point.intensity, best_dist_xy);
 
   return true;
+}
+
+
+// 对所有候选视点进行 terrain_map 投影筛选（在源头处理）
+// 这样所有后续使用候选视点的地方（local_path、lookahead_point、waypoint等）都会自动使用投影后的位置
+int SensorCoveragePlanner3D::ProcessViewPointMapping(int viewpoint_candidate_count) {
+  // 将视点位置投影到地形地图上
+  if (viewpoint_candidate_count > 0) {
+    int snapped_count = 0;                        // 统计成功投影/贴到地形上的视点数量
+    int failed_count = 0;                         // 统计投影失败/贴到地形上的视点数量
+    
+    RCLCPP_INFO(this->get_logger(), 
+                "对 %zu 个候选视点进行地形投影筛选",
+                viewpoint_candidate_count);         // candidate_indices_是候选视点的索引
+    
+    // 从后向前遍历，方便移除元素
+    for (int i = viewpoint_candidate_count - 1; i >= 0; i--) {
+      int viewpoint_ind = viewpoint_manager_->candidate_indices_[i];
+      geometry_msgs::msg::Point original_pos = viewpoint_manager_->GetViewPointPosition(viewpoint_ind);       // 这次处理的视点在管理器中的编号
+      geometry_msgs::msg::Point snapped_pos = original_pos;       // 初始化为原始位置，后面如果投影成功，会被修改为“投影后”的可通行位置
+      
+      if (SnapViewPointToTraversableTerrain(snapped_pos)) {
+        // 投影成功，更新候选视点位置
+        viewpoint_manager_->SetViewPointPosition(viewpoint_ind, snapped_pos);     // 更新该视点在管理器中的位置
+        snapped_count++;
+        RCLCPP_DEBUG(this->get_logger(), 
+                     "候选视点 %d 投影成功: (%.2f, %.2f, %.2f) -> (%.2f, %.2f, %.2f)",
+                     viewpoint_ind, original_pos.x, original_pos.y, original_pos.z, snapped_pos.x, snapped_pos.y, snapped_pos.z);
+      } else {
+        // 投影失败，从候选列表中移除
+        viewpoint_manager_->SetViewPointCandidate(viewpoint_ind, false);
+        viewpoint_manager_->candidate_indices_.erase(viewpoint_manager_->candidate_indices_.begin() + i);
+        failed_count++;
+        RCLCPP_DEBUG(this->get_logger(),
+                     "候选视点 %d 位于 (%.2f, %.2f, %.2f) 被移除: 超出地形地图覆盖范围", 
+                     viewpoint_ind, original_pos.x, original_pos.y, original_pos.z);
+      }
+    }
+    
+    // 重新统计候选视点数量
+    viewpoint_candidate_count_aftermapping = viewpoint_manager_->candidate_indices_.size();
+    
+    RCLCPP_INFO(this->get_logger(), 
+                "候选视点地形过滤: %d 个投影成功, %d 个被移除, 投影后候选视点剩余 %d 个",
+                snapped_count, failed_count, viewpoint_candidate_count_aftermapping);
+
+    return viewpoint_candidate_count_aftermapping;
+
 }
 
 } // namespace sensor_coverage_planner_3d_ns

@@ -71,14 +71,14 @@ double disRatioZ = 0.2;
 // terrain voxel parameters
 float terrainVoxelSize = 1.0;
 int terrainVoxelShiftX = 0;
-int terrainVoxelShiftY = 0;
-const int terrainVoxelWidth = 21;
-int terrainVoxelHalfWidth = (terrainVoxelWidth - 1) / 2;
+int terrainVoxelShiftY = 0;   
+const int terrainVoxelWidth = 41; // 决定初始体素地图的宽度
+int terrainVoxelHalfWidth = (terrainVoxelWidth - 1) / 2;    // 决定terrainCloud 的提取范围
 const int terrainVoxelNum = terrainVoxelWidth * terrainVoxelWidth;
 
 // planar voxel parameters
 float planarVoxelSize = 0.2;
-const int planarVoxelWidth = 91;
+const int planarVoxelWidth = 101; // terrainCloud中点的分析范围
 int planarVoxelHalfWidth = (planarVoxelWidth - 1) / 2;
 const int planarVoxelNum = planarVoxelWidth * planarVoxelWidth;
 

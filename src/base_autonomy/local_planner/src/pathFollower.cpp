@@ -488,7 +488,8 @@ int main(int argc, char** argv)
         if (is_real_robot)
         {
           if (cmd_vel.twist.linear.x == 0 && cmd_vel.twist.linear.y == 0 && cmd_vel.twist.angular.z == 0){
-          	sport_req.StopMove(req);
+          	// sport_req.StopMove(req);                   // 调用StopMove会立刻重置底层运控状态，恢复成灵动模式
+            sport_req.Move(req, cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
           }
           else{
                sport_req.Move(req, cmd_vel.twist.linear.x, cmd_vel.twist.linear.y, cmd_vel.twist.angular.z);
