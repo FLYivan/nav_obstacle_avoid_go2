@@ -560,7 +560,7 @@ void SensorCoveragePlanner3D::RegisteredScanCallback(
 
 
 
-    // keypose_cloud_->Publish(); // 发布关键姿态点云
+    keypose_cloud_->Publish(); // 发布关键姿态点云
     registered_scan_stack_->cloud_->clear(); // 清空注册扫描堆栈
     keypose_cloud_update_ = true; // 更新关键姿态点云标志
   }
@@ -707,6 +707,7 @@ void SensorCoveragePlanner3D::ResetWaypointCallback(
   std::cout << "reset waypoint" << std::endl;
 }
 
+// 初始化发送初始默认距离航点
 void SensorCoveragePlanner3D::SendInitialWaypoint() {
   // send waypoint ahead
   double lx = 12.0;
@@ -721,6 +722,8 @@ void SensorCoveragePlanner3D::SendInitialWaypoint() {
   waypoint.point.y = robot_position_.y + dy;
   waypoint.point.z = robot_position_.z;
   waypoint_pub_->publish(waypoint);
+  // 调试打印：发送初始默认距离航点
+  RCLCPP_INFO(this->get_logger(), "发送初始默认距离航点：%f, %f, %f", waypoint.point.x, waypoint.point.y, waypoint.point.z);
 }
 
 void SensorCoveragePlanner3D::UpdateKeyposeGraph() {
@@ -1546,6 +1549,10 @@ void SensorCoveragePlanner3D::execute() {
   }
 
   overall_processing_timer.Start();
+
+  // 调试打印：当前keypose_cloud_update_状态
+  RCLCPP_INFO(this->get_logger(), "当前keypose_cloud_update_状态：%d", keypose_cloud_update_);
+  
   if (keypose_cloud_update_) {
     keypose_cloud_update_ = false;
 
@@ -1559,6 +1566,9 @@ void SensorCoveragePlanner3D::execute() {
 
     int viewpoint_candidate_count = UpdateViewPoints();
     if (viewpoint_candidate_count == 0) {
+      // 调试打印：无法获取候选视点
+      RCLCPP_INFO(this->get_logger(), "无法获取候选视点，viewpoint_candidate_count数量：%d", viewpoint_candidate_count);
+      
       RCLCPP_WARN(rclcpp::get_logger("standalone_logger"),
                   "Cannot get candidate viewpoints, skipping this round");
       return;
