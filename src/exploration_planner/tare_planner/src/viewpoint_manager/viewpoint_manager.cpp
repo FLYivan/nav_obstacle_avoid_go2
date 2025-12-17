@@ -42,7 +42,8 @@ bool ViewPointManagerParameter::ReadParameters(rclcpp::Node::SharedPtr nh)
   nh->get_parameter("kSensorRange", kSensorRange);
   nh->get_parameter("kNeighborRange", kNeighborRange);
 
-  dimension_ = 2;
+  // 自动判断维度：如果 resolution_z > 0，则为 3D，否则为 2D
+  dimension_ = (kResolution.z() > 0.0) ? 3 : 2;
   kViewPointNumber = kNumber.x() * kNumber.y() * kNumber.z();
   kRolloverStepsize = kNumber / 5;
 
@@ -1491,8 +1492,13 @@ bool ViewPointManager::InLocalPlanningHorizon(const Eigen::Vector3d& position)
   int viewpoint_ind = GetViewPointInd(position);
   if (InRange(viewpoint_ind))
   {
-    double max_z_diff = std::max(vp_.kResolution.x(), vp_.kResolution.y()) * 2;
+    // 多楼层 3D 系统：需要验证 Z 轴距离
+    // 如果 resolution_z > 0，GetViewPointInd 会考虑 Z 维度，不同楼层会有不同索引
+    // 但仍需要检查精确的 Z 距离，因为网格是离散的
+    // double max_z_diff = vp_.kResolution.z();  // 允许 2m 的 Z 轴偏差（适配 resolution_z = 2.0）
+    double max_z_diff = 2.0;
     geometry_msgs::msg::Point viewpoint_position = GetViewPointPosition(viewpoint_ind);
+    
     if (std::abs(viewpoint_position.z - position.z()) < max_z_diff &&
         (IsViewPointCandidate(viewpoint_ind) || ViewPointInCollision(viewpoint_ind)))
     {

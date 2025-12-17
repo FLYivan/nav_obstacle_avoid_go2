@@ -722,8 +722,7 @@ void SensorCoveragePlanner3D::SendInitialWaypoint() {
   waypoint.point.y = robot_position_.y + dy;
   waypoint.point.z = robot_position_.z;
   waypoint_pub_->publish(waypoint);
-  // 调试打印：发送初始默认距离航点
-  RCLCPP_INFO(this->get_logger(), "发送初始默认距离航点：%f, %f, %f", waypoint.point.x, waypoint.point.y, waypoint.point.z);
+ 
 }
 
 void SensorCoveragePlanner3D::UpdateKeyposeGraph() {
@@ -773,6 +772,14 @@ int SensorCoveragePlanner3D::UpdateViewPoints() {
 
 
   UpdateVisitedPositions();
+  
+  // 关键修复：每次都用当前机器人位置标记附近视点为visited
+  // 不能只依赖visited_positions_数组，因为如果机器人在小范围移动（<1m），
+  // 不会添加新位置到数组，导致当前位置附近的视点永远不会被标记
+  // std::vector<Eigen::Vector3d> current_position_vec;
+  // current_position_vec.push_back(Eigen::Vector3d(robot_position_.x, robot_position_.y, robot_position_.z));
+  // viewpoint_manager_->UpdateViewPointVisited(current_position_vec);
+  
   viewpoint_manager_->UpdateViewPointVisited(visited_positions_);
   viewpoint_manager_->UpdateViewPointVisited(grid_world_);
 
@@ -841,8 +848,17 @@ void SensorCoveragePlanner3D::UpdateVisitedPositions() {
                                          robot_position_.z);
   bool existing = false;
   for (int i = 0; i < visited_positions_.size(); i++) {
+    
+    // 3D化改造：分别计算 xy 平面距离和 z 轴距离
+    Eigen::Vector2d robot_xy(robot_current_position.x(), robot_current_position.y());
+    Eigen::Vector2d visited_xy(visited_positions_[i].x(), visited_positions_[i].y());
+    double xy_distance = (robot_xy - visited_xy).norm();
+    double z_distance = std::abs(robot_current_position.z() - visited_positions_[i].z());
+    
+    // xy平面1米内 
+    // z轴阈值0.3m考虑了跨楼层的情况
     // TODO: parameterize this
-    if ((robot_current_position - visited_positions_[i]).norm() < 1) {
+    if (xy_distance < 1.0 && z_distance < 0.3) {
       existing = true;
       break;
     }
@@ -1080,7 +1096,8 @@ SensorCoveragePlanner3D::ConcatenateGlobalLocalPath(
 bool SensorCoveragePlanner3D::GetLookAheadPoint(
     const exploration_path_ns::ExplorationPath &local_path,
     const exploration_path_ns::ExplorationPath &global_path,
-    Eigen::Vector3d &lookahead_point) {
+    Eigen::Vector3d &lookahead_point) 
+{
   Eigen::Vector3d robot_position(robot_position_.x, robot_position_.y,
                                  robot_position_.z);
 
@@ -1371,6 +1388,11 @@ bool SensorCoveragePlanner3D::GetLookAheadPoint(
       }
     }
   }
+  
+  // 【原因3调试】打印最终选择的前瞻点
+  RCLCPP_INFO(this->get_logger(), 
+              "[原因3调试] 最终选择的前瞻点: (%.3f,%.3f,%.3f)",
+              lookahead_point.x(), lookahead_point.y(), lookahead_point.z());
 
   if ((lookahead_point == forward_lookahead_point &&
        !forward_lookahead_point_in_los) ||
@@ -1550,8 +1572,6 @@ void SensorCoveragePlanner3D::execute() {
 
   overall_processing_timer.Start();
 
-  // 调试打印：当前keypose_cloud_update_状态
-  RCLCPP_INFO(this->get_logger(), "当前keypose_cloud_update_状态：%d", keypose_cloud_update_);
   
   if (keypose_cloud_update_) {
     keypose_cloud_update_ = false;
@@ -1565,10 +1585,7 @@ void SensorCoveragePlanner3D::execute() {
     UpdateGlobalRepresentation();
 
     int viewpoint_candidate_count = UpdateViewPoints();
-    if (viewpoint_candidate_count == 0) {
-      // 调试打印：无法获取候选视点
-      RCLCPP_INFO(this->get_logger(), "无法获取候选视点，viewpoint_candidate_count数量：%d", viewpoint_candidate_count);
-      
+    if (viewpoint_candidate_count == 0) {     
       RCLCPP_WARN(rclcpp::get_logger("standalone_logger"),
                   "Cannot get candidate viewpoints, skipping this round");
       return;
@@ -1625,6 +1642,9 @@ void SensorCoveragePlanner3D::execute() {
 
     lookahead_point_update_ =
         GetLookAheadPoint(exploration_path_, global_path, lookahead_point_);
+        
+    
+      
     PublishWaypoint();
 
     overall_processing_timer.Stop(false);

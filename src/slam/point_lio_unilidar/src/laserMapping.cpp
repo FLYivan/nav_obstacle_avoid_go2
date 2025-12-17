@@ -257,6 +257,9 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 {
     // std::cout << "standard_pcl_cbk() run once!\n";
 
+    if (flg_exit)
+        return;
+
     mtx_buffer.lock();
 
     scan_count++;
@@ -451,6 +454,9 @@ void standard_pcl_cbk(const sensor_msgs::msg::PointCloud2::ConstSharedPtr msg)
 
 void imu_cbk(const sensor_msgs::msg::Imu::ConstSharedPtr msg_in)
 {
+
+    if (flg_exit)
+        return;
 
     publish_count++;
 
