@@ -170,7 +170,7 @@ add_library(absl::base STATIC IMPORTED)
 set_target_properties(absl::base PROPERTIES
   INTERFACE_COMPILE_FEATURES "cxx_std_17"
   INTERFACE_INCLUDE_DIRECTORIES "${_IMPORT_PREFIX}/include"
-  INTERFACE_LINK_LIBRARIES "absl::atomic_hook;absl::base_internal;absl::config;absl::core_headers;absl::dynamic_annotations;absl::log_severity;absl::raw_logging_internal;absl::spinlock_wait;absl::type_traits;Threads::Threads;\$<LINK_ONLY:\$<\$<BOOL:/usr/lib/x86_64-linux-gnu/librt.so>:-lrt>>;\$<LINK_ONLY:\$<\$<BOOL:>:-ladvapi32>>"
+  INTERFACE_LINK_LIBRARIES "absl::atomic_hook;absl::base_internal;absl::config;absl::core_headers;absl::dynamic_annotations;absl::log_severity;absl::raw_logging_internal;absl::spinlock_wait;absl::type_traits;Threads::Threads;\$<LINK_ONLY:\$<\$<BOOL:/usr/lib/aarch64-linux-gnu/librt.so>:-lrt>>;\$<LINK_ONLY:\$<\$<BOOL:>:-ladvapi32>>"
   INTERFACE_SYSTEM_INCLUDE_DIRECTORIES "include"
 )
 

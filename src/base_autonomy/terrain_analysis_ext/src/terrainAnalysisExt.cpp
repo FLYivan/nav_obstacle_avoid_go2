@@ -21,7 +21,7 @@
 // TF2相关头文件
 #include "tf2/transform_datatypes.h"
 #include "tf2_ros/transform_broadcaster.h"
-#include "tf2_geometry_msgs/tf2_geometry_msgs.hpp"
+#include "tf2_geometry_msgs/tf2_geometry_msgs.h"
 
 // PCL点云处理相关头文件
 #include <pcl/filters/voxel_grid.h>

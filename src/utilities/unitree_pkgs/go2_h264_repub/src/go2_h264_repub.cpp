@@ -12,7 +12,13 @@ public:
         this->declare_parameter("multicast_iface", multicast_iface);
         this->get_parameter("multicast_iface", multicast_iface);
 
-        std::string gstreamer_str = "udpsrc address=230.1.1.1 port=1720 multicast-iface=" + multicast_iface + " ! application/x-rtp, media=video, encoding-name=H264 ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert ! video/x-raw,width=1280,height=720,format=BGR ! appsink drop=1";
+        // 低延迟配置：rtpjitterbuffer latency=100 减少缓冲，sync=false 避免等待时钟，max-buffers=1 只保留最新帧
+        std::string gstreamer_str = "udpsrc address=230.1.1.1 port=1720 multicast-iface=" + multicast_iface +
+            " ! application/x-rtp, media=video, encoding-name=H264"
+            " ! rtpjitterbuffer latency=100"
+            " ! rtph264depay ! h264parse ! avdec_h264 ! videoconvert"
+            " ! video/x-raw,width=1280,height=720,format=BGR"
+            " ! appsink drop=1 sync=false max-buffers=1";
         cap.open(gstreamer_str, cv::CAP_GSTREAMER);
         
         rclcpp::Rate rate(100);
