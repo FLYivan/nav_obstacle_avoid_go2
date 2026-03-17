@@ -225,50 +225,26 @@ public:
     return vp_.kCoverageDilationRadius;
   }
 
-  // 模板函数，检查点是否被视点可见
   template <class PointType>
   bool VisibleByViewPoint(const PointType& point, int viewpoint_ind)
   {
-    // 确保视点索引在有效范围内
     MY_ASSERT(grid_->InRange(viewpoint_ind));
-
-    // 获取视点在数组中的索引
     int array_ind = grid_->GetArrayInd(viewpoint_ind);
-    // 获取视点的位置
     geometry_msgs::msg::Point viewpoint_position = viewpoints_[array_ind].GetPosition();
-
-    // 检查点的z坐标与视点的z坐标的差值是否超过最大差值
     if (std::abs(point.z - viewpoint_position.z) > vp_.kDiffZMax)
     {
-
-
-      // // 打印信息和高度差绝对值
-      // double height_difference = std::abs(point.z - viewpoint_position.z);
-      // RCLCPP_INFO(rclcpp::get_logger("viewpoint_manager"), "Point is not visible due to exceeding z-coordinate difference. 高度差绝对值: %f", height_difference);
-
-
-      return false; // 如果超过，返回不可见
+      return false;
     }
-
-
-    // 检查点是否在视点的视野范围内
     if (!misc_utils_ns::InFOVSimple(Eigen::Vector3d(point.x, point.y, point.z),
                                     Eigen::Vector3d(viewpoint_position.x, viewpoint_position.y, viewpoint_position.z),
                                     vp_.kVerticalFOVRatio, vp_.kSensorRange, vp_.kInFovXYDistThreshold,
                                     vp_.kInFovZDiffThreshold))
     {
-      // // 打印信息
-      // RCLCPP_INFO(rclcpp::get_logger("viewpoint_manager"), "Point is not visible due to not in field of view.");
-      return false; // 如果不在视野范围内，返回不可见
+      return false;
     }
-
-
-    // 检查视点是否可以看到该点，考虑遮挡阈值
     bool visible = viewpoints_[array_ind].CheckVisibility<PointType>(point, vp_.kCoverageOcclusionThr);
 
-    // // 打印信息
-    // RCLCPP_INFO(rclcpp::get_logger("viewpoint_manager"), "Point 可见性: %d", visible);
-    return visible; // 返回点的可见性
+    return visible;
   }
 
   // Viewpoint management
