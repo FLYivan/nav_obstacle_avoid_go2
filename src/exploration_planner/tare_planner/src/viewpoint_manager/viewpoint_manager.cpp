@@ -42,8 +42,7 @@ bool ViewPointManagerParameter::ReadParameters(rclcpp::Node::SharedPtr nh)
   nh->get_parameter("kSensorRange", kSensorRange);
   nh->get_parameter("kNeighborRange", kNeighborRange);
 
-  // 自动判断维度：如果 resolution_z > 0，则为 3D，否则为 2D
-  dimension_ = (kResolution.z() > 0.0) ? 3 : 2;
+  dimension_ = 2;
   kViewPointNumber = kNumber.x() * kNumber.y() * kNumber.z();
   kRolloverStepsize = kNumber / 5;
 
@@ -347,11 +346,10 @@ void ViewPointManager::UpdateOrigin()
   }
 }
 
-// 获取视点数组索引
 int ViewPointManager::GetViewPointArrayInd(int viewpoint_ind, bool use_array_ind) const
 {
-  MY_ASSERT(grid_->InRange(viewpoint_ind)); // 确保视点索引在范围内
-  return (use_array_ind ? viewpoint_ind : grid_->GetArrayInd(viewpoint_ind)); // 根据是否使用数组索引返回相应的索引
+  MY_ASSERT(grid_->InRange(viewpoint_ind));
+  return (use_array_ind ? viewpoint_ind : grid_->GetArrayInd(viewpoint_ind));
 }
 
 int ViewPointManager::GetViewPointInd(int viewpoint_array_ind) const
@@ -1017,12 +1015,9 @@ void ViewPointManager::SetViewPointVisited(int viewpoint_ind, bool visited, bool
   viewpoints_[array_ind].SetVisited(visited);
 }
 // Selected
-// 检查视点是否被选中
 bool ViewPointManager::ViewPointSelected(int viewpoint_ind, bool use_array_ind)
 {
-  // 获取视点的数组索引
   int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind);
-  // 返回该视点是否被选中
   return viewpoints_[array_ind].Selected();
 }
 void ViewPointManager::SetViewPointSelected(int viewpoint_ind, bool selected, bool use_array_ind)
@@ -1089,11 +1084,7 @@ void ViewPointManager::SetViewPointInCurrentFrameLineOfSight(int viewpoint_ind, 
 // Position
 geometry_msgs::msg::Point ViewPointManager::GetViewPointPosition(int viewpoint_ind, bool use_array_ind)
 {
-  //  首先调用 GetViewPointArrayInd 获取实际的数组索引
   int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind);
-
-  // 然后调用 viewpoints_ 数组中的 GetPosition 方法获取视点位置
-  // 其中z轴的值，始终= robot_position.z() =  /state_estimation_at_scan 中的 pose.pose.position.z （不会随地形变化）
   return viewpoints_[array_ind].GetPosition();
 }
 void ViewPointManager::SetViewPointPosition(int viewpoint_ind, geometry_msgs::msg::Point position, bool use_array_ind)
@@ -1163,28 +1154,25 @@ int ViewPointManager::GetViewPointCoveredPointNum(int viewpoint_ind, bool use_ar
   return viewpoints_[array_ind].GetCoveredPointNum();
 }
 
-// 获取视点覆盖的边界点数量
-int ViewPointManager::GetViewPointCoveredFrontierPointNum(int viewpoint_ind, bool use_array_ind) // 定义函数，获取视点覆盖的边界点数量
+int ViewPointManager::GetViewPointCoveredFrontierPointNum(int viewpoint_ind, bool use_array_ind)
 {
-  int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind); // 获取视点数组索引
-  return viewpoints_[array_ind].GetCoveredFrontierPointNum(); // 返回对应视点的覆盖边界点数量
+  int array_ind = GetViewPointArrayInd(viewpoint_ind, use_array_ind);
+  return viewpoints_[array_ind].GetCoveredFrontierPointNum();
 }
 
-// 获取视点覆盖的点数量
 int ViewPointManager::GetViewPointCoveredPointNum(const std::vector<bool>& point_list, int viewpoint_index,
                                                   bool use_array_ind)
 {
-  int covered_point_num = 0; // 初始化覆盖点数量
-  // 遍历获取的覆盖点列表
+  int covered_point_num = 0;
   for (const auto& point_ind : GetViewPointCoveredPointList(viewpoint_index, use_array_ind))
   {
-    MY_ASSERT(misc_utils_ns::InRange<bool>(point_list, point_ind)); // 确保点索引在范围内
-    if (!point_list[point_ind]) // 如果该点未被覆盖
+    MY_ASSERT(misc_utils_ns::InRange<bool>(point_list, point_ind));
+    if (!point_list[point_ind])
     {
-      covered_point_num++; // 增加覆盖点数量
+      covered_point_num++;
     }
   }
-  return covered_point_num; // 返回覆盖点数量
+  return covered_point_num;
 }
 int ViewPointManager::GetViewPointCoveredFrontierPointNum(const std::vector<bool>& frontier_point_list,
                                                           int viewpoint_index, bool use_array_ind)
@@ -1492,13 +1480,8 @@ bool ViewPointManager::InLocalPlanningHorizon(const Eigen::Vector3d& position)
   int viewpoint_ind = GetViewPointInd(position);
   if (InRange(viewpoint_ind))
   {
-    // 多楼层 3D 系统：需要验证 Z 轴距离
-    // 如果 resolution_z > 0，GetViewPointInd 会考虑 Z 维度，不同楼层会有不同索引
-    // 但仍需要检查精确的 Z 距离，因为网格是离散的
-    // double max_z_diff = vp_.kResolution.z();  // 允许 2m 的 Z 轴偏差（适配 resolution_z = 2.0）
-    double max_z_diff = 2.0;
+    double max_z_diff = std::max(vp_.kResolution.x(), vp_.kResolution.y()) * 2;
     geometry_msgs::msg::Point viewpoint_position = GetViewPointPosition(viewpoint_ind);
-    
     if (std::abs(viewpoint_position.z - position.z()) < max_z_diff &&
         (IsViewPointCandidate(viewpoint_ind) || ViewPointInCollision(viewpoint_ind)))
     {
