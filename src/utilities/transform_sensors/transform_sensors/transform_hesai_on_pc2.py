@@ -7,13 +7,28 @@ from sensor_msgs.msg import PointCloud2, PointField  # 导入点云消息类型
 from geometry_msgs.msg import TransformStamped, Vector3  # 导入变换和向量消息类型
 import sensor_msgs_py.point_cloud2 as pc2  # 导入点云处理工具
 
-# 修复 NumPy 兼容性问题：在导入 transforms3d 之前添加 np.float 别名
+# 修复 NumPy 兼容性问题：在导入 transforms3d 之前添加 NumPy 1.x 别名（兼容 NumPy 2）
 import numpy as np  # 导入numpy库
 if not hasattr(np, 'float'):
     np.float = np.float64
+if not hasattr(np, 'int'):
     np.int = np.int_
-    np.complex = np.complex_
+if not hasattr(np, 'complex'):
+    np.complex = np.complex128
+if not hasattr(np, 'bool'):
     np.bool = np.bool_
+if not hasattr(np, 'maximum_sctype'):
+    def _maximum_sctype(t):
+        dtype = np.dtype(t)
+        kind_map = {
+            'b': np.bool_,
+            'i': np.dtype('longlong'),
+            'u': np.dtype('ulonglong'),
+            'f': np.longdouble,
+            'c': np.clongdouble,
+        }
+        return np.dtype(kind_map.get(dtype.kind, dtype))
+    np.maximum_sctype = _maximum_sctype
 
 import tf_transformations  # 导入TF变换工具
 

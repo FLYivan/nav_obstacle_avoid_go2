@@ -442,7 +442,11 @@ int main(int argc, char** argv)
       if (odomTime < slowInitTime + slowTime1 && slowInitTime > 0) joySpeed3 *= slowRate1;
       else if (odomTime < slowInitTime + slowTime1 + slowTime2 && slowInitTime > 0) joySpeed3 *= slowRate2;
 
-      if ((fabs(dirDiff) < dirDiffThre || (dis < goalCloseDis && fabs(dirDiff) < omniDirDiffThre))  && dis > stopDisThre) {
+      // dirDiff过大时只转不走，是“原地左右拧、慢慢挪”的直接原因之一
+      const bool alignOk = (fabs(dirDiff) < dirDiffThre ||
+                            (dis < goalCloseDis && fabs(dirDiff) < omniDirDiffThre));
+      const bool pastStop = (dis > stopDisThre);
+      if (alignOk && pastStop) {
         if (vehicleSpeed < joySpeed3) vehicleSpeed += maxAccel / 100.0;
         else if (vehicleSpeed > joySpeed3) vehicleSpeed -= maxAccel / 100.0;
       } else {
