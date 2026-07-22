@@ -850,6 +850,7 @@ int main(int argc, char** argv)
       if (pathRangeBySpeed) pathRange = adjacentRange * joySpeed;
       if (pathRange < minPathRange) pathRange = minPathRange;
       float relativeGoalDis = adjacentRange;
+      float relativeGoalDisXY = adjacentRange;  // 初始化XY平面距离，提升到外层作用域供路径评分使用
       float relativeGoalDisZ = 0.1;  // 初始化Z轴距离，用于3D导航
 
       if (autonomyMode) {
@@ -899,7 +900,7 @@ int main(int argc, char** argv)
         }
 
         // 分别计算XY平面距离和Z轴距离（适合地面机器人的运动特性）
-        float relativeGoalDisXY = sqrt(relativeGoalX * relativeGoalX + relativeGoalY * relativeGoalY);
+        relativeGoalDisXY = sqrt(relativeGoalX * relativeGoalX + relativeGoalY * relativeGoalY);
         relativeGoalDisZ = fabs(relativeGoalZ);
         
         // RCLCPP_INFO(nh->get_logger(), "距离分量 - XY平面: %.3f, Z轴: %.3f", relativeGoalDisXY, relativeGoalDisZ);
@@ -1043,7 +1044,7 @@ int main(int argc, char** argv)
             float groupDirW = 4  - fabs(pathList[i % pathNum] - 3);
             
             // 3D导航：分别判断XY和Z距离条件
-            bool goalCloseXY = (relativeGoalDis < goalCloseDis_XY);      // XY平面接近
+            bool goalCloseXY = (relativeGoalDisXY < goalCloseDis_XY);      // XY平面接近（修正：原来错用了3D距离relativeGoalDis）
             bool goalCloseZ = (relativeGoalDisZ < goalCloseDis_Z);    // Z轴接近
             
             float score;
