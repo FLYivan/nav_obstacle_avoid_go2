@@ -107,6 +107,23 @@
     <param name="is_real_robot" value="$(var is_real_robot)"/>
   </node>
 
+  <!-- 到点后原地对齐航点预设朝向：由 PCT 发 /rotate_goal，本节点经 /joy manualMode 驱动 pathFollower -->
+  <node pkg="local_planner" exec="rotateToYaw" name="rotateToYaw" output="screen">
+    <param name="localization_topic" value="/localization" />
+    <param name="rotate_goal_topic" value="/rotate_goal" />
+    <param name="rotate_cancel_topic" value="/rotate_cancel" />
+    <param name="rotate_done_topic" value="/rotate_done" />
+    <param name="joy_topic" value="/joy" />
+    <param name="control_rate" value="50.0" />
+    <param name="max_yaw_rate" value="0.6" />
+    <param name="path_follower_max_yaw_rate_deg" value="80.0" />
+    <param name="yaw_gain" value="1.5" />
+    <param name="yaw_tolerance" value="0.08" />
+    <param name="hold_sec" value="0.3" />
+    <param name="publish_joy_guard" value="true" />
+    <param name="is_real_robot" value="$(var is_real_robot)" />
+  </node>
+
   <node pkg="tf2_ros" exec="static_transform_publisher" name="vehicleTransPublisher" args="-$(var sensorOffsetX) -$(var sensorOffsetY) 0 0 0 0 /sensor /vehicle"/>
 
   <node pkg="tf2_ros" exec="static_transform_publisher" name="sensorTransPublisher" args="0 0 $(var cameraOffsetZ) -1.5707963 0 -1.5707963 /sensor /camera"/>
