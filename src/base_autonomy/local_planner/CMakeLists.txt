@@ -34,22 +34,16 @@ find_package(go2_sport_api REQUIRED)
 
 add_executable(localPlanner src/localPlanner.cpp)
 add_executable(pathFollower src/pathFollower.cpp)
-
-# target_include_directories(pathFollower PUBLIC
-#   "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
-#   "$<INSTALL_INTERFACE:include/${PROJECT_NAME}>")
+add_executable(rotateToYaw src/rotateToYaw.cpp)
 
 ament_target_dependencies(localPlanner rclcpp std_msgs sensor_msgs nav_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs message_filters pcl_ros pcl_conversions)
 ament_target_dependencies(pathFollower rclcpp std_msgs sensor_msgs nav_msgs geometry_msgs tf2 tf2_ros tf2_geometry_msgs message_filters pcl_ros pcl_conversions go2_sport_api unitree_api)
-
-# get_property(dirs DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY INCLUDE_DIRECTORIES)
-# foreach(dir ${dirs})
-#   message(WARNING "dir='${dir}'")
-# endforeach()
+ament_target_dependencies(rotateToYaw rclcpp std_msgs sensor_msgs nav_msgs geometry_msgs unitree_api go2_sport_api)
 
 install(TARGETS
   localPlanner
   pathFollower
+  rotateToYaw
   DESTINATION lib/${PROJECT_NAME})
 
 install(
