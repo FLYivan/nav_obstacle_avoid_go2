@@ -139,7 +139,11 @@ private:
     active_ = false;
     hold_ticks_ = 0;
     RCLCPP_INFO(this->get_logger(), "Rotate cancelled");
-    stopMotion();
+    if (publish_joy_guard_) {
+      publishJoyRestore();
+    } else {
+      publishMove(0.0f, 0.0f, 0.0f);
+    }
   }
 
   void controlLoop()
@@ -174,14 +178,19 @@ private:
           should_finish = true;
         }
       }
-      stopMotion();
       if (should_finish) {
+        // 先恢复 autonomy 模式，再发 /rotate_done，确保 pathFollower 退出 manualMode
+        if (publish_joy_guard_) {
+          publishJoyRestore();
+        }
         std_msgs::msg::Empty done;
         done_pub_->publish(done);
         RCLCPP_INFO(
           this->get_logger(),
           "Rotate done: yaw=%.3f target=%.3f err=%.3f (hold=%d)",
           yaw, target, err, hold);
+      } else {
+        stopMotion();
       }
       return;
     }
@@ -212,6 +221,18 @@ private:
     } else {
       publishMove(0.0f, 0.0f, 0.0f);
     }
+  }
+
+  // 恢复自主模式：axes[2]=-1(autonomy on), axes[5]=1(manualMode off)
+  // 与 LocalPlannerBridge._autonomy_enable_joy 保持一致
+  void publishJoyRestore()
+  {
+    sensor_msgs::msg::Joy joy;
+    joy.header.stamp = this->now();
+    joy.header.frame_id = "rotateToYaw";
+    joy.axes = {0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f};
+    joy.buttons.assign(11, 0);
+    joy_pub_->publish(joy);
   }
 
   void publishMove(float vx, float vy, float vyaw)
