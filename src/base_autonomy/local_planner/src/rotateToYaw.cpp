@@ -179,7 +179,7 @@ private:
         }
       }
       if (should_finish) {
-        // 先恢复 autonomy 模式，再发 /rotate_done，确保 pathFollower 退出 manualMode
+        // 先退出 manualMode（保持 autonomy 关），再发 /rotate_done
         if (publish_joy_guard_) {
           publishJoyRestore();
         }
@@ -223,14 +223,13 @@ private:
     }
   }
 
-  // 恢复自主模式：axes[2]=-1(autonomy on), axes[5]=1(manualMode off)
-  // 与 LocalPlannerBridge._autonomy_enable_joy 保持一致
+  // 退出 manualMode，但保持 autonomy 关闭：由 PCT 发下一段 /way_point 时再开自主
   void publishJoyRestore()
   {
     sensor_msgs::msg::Joy joy;
     joy.header.stamp = this->now();
     joy.header.frame_id = "rotateToYaw";
-    joy.axes = {0.0f, 0.0f, -1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 0.0f};
+    joy.axes = {0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 0.0f};
     joy.buttons.assign(11, 0);
     joy_pub_->publish(joy);
   }
