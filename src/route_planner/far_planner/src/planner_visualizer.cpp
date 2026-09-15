@@ -7,6 +7,9 @@
 
 
 #include "far_planner/planner_visualizer.h"
+#include <algorithm>
+#include <cmath>
+#include <cstdint>
 
 /***************************************************************************************/
 
@@ -16,12 +19,13 @@ void DPVisualizer::Init(const rclcpp::Node::SharedPtr nh) {
     point_cloud_ptr_ = PointCloudPtr(new pcl::PointCloud<PCLPoint>());
     // Rviz Publisher
     viz_path_pub_    = nh_->create_publisher<visualization_msgs::msg::Marker>("/viz_path_topic", 5);
-    viz_node_pub_    = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/viz_node_topic", 5);
+    // PointCloud2 (not MarkerArray): Foxy Marker layout is incompatible with Humble RViz
+    viz_node_pub_    = nh_->create_publisher<sensor_msgs::msg::PointCloud2>("/viz_node_topic", 5);
     viz_poly_pub_    = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/viz_poly_topic", 5);
     viz_graph_pub_   = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/viz_graph_topic", 5);
     viz_contour_pub_ = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/viz_contour_topic", 5);
     viz_map_pub_     = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/viz_grid_map_topic", 5);
-    viz_view_extend  = nh_->create_publisher<visualization_msgs::msg::MarkerArray>("/viz_viewpoint_extend_topic", 5);
+    viz_view_extend  = nh_->create_publisher<sensor_msgs::msg::PointCloud2>("/viz_viewpoint_extend_topic", 5);
     // init marker set
     marker_set_.clear();
 }
@@ -112,7 +116,83 @@ void DPVisualizer::VizViewpointExtend(const NavNodePtr& ori_nav_ptr, const Point
     view_extend_marker_array.markers.push_back(ray_tracing_marker);
     view_extend_marker_array.markers.push_back(origin_p_marker);
     view_extend_marker_array.markers.push_back(extend_p_marker);
-    viz_view_extend->publish(view_extend_marker_array);
+    this->PublishMarkersAsCloud(viz_view_extend, view_extend_marker_array);
+}
+
+void DPVisualizer::PubNodesVisualization() {
+    MarkerArray marker_array;
+    for (const auto& marker : marker_set_) {
+        marker_array.markers.push_back(marker);
+    }
+    this->PublishMarkersAsCloud(viz_node_pub_, marker_array);
+    marker_set_.clear();
+}
+
+void DPVisualizer::PublishMarkersAsCloud(
+    const rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr& pub,
+    const MarkerArray& markers)
+{
+    pcl::PointCloud<pcl::PointXYZRGB> cloud;
+    constexpr float kLineStep = 0.08f;
+    auto to_u8 = [](float c) {
+        return static_cast<std::uint8_t>(std::max(0.f, std::min(255.f, std::round(c * 255.f))));
+    };
+    auto push_pt = [&](float x, float y, float z, std::uint8_t cr, std::uint8_t cg, std::uint8_t cb) {
+        pcl::PointXYZRGB p;
+        p.x = x; p.y = y; p.z = z;
+        p.r = cr; p.g = cg; p.b = cb;
+        cloud.push_back(p);
+    };
+    auto sample_seg = [&](const geometry_msgs::msg::Point& p0,
+                          const geometry_msgs::msg::Point& p1,
+                          std::uint8_t cr, std::uint8_t cg, std::uint8_t cb) {
+        const float dx = p1.x - p0.x, dy = p1.y - p0.y, dz = p1.z - p0.z;
+        const float dist = std::sqrt(dx * dx + dy * dy + dz * dz);
+        if (dist < 1e-6f) {
+            push_pt(p0.x, p0.y, p0.z, cr, cg, cb);
+            return;
+        }
+        const int n = std::max(1, static_cast<int>(dist / kLineStep));
+        for (int i = 0; i <= n; ++i) {
+            const float t = static_cast<float>(i) / static_cast<float>(n);
+            push_pt(p0.x + t * dx, p0.y + t * dy, p0.z + t * dz, cr, cg, cb);
+        }
+    };
+
+    for (const auto& marker : markers.markers) {
+        if (marker.action == Marker::DELETE || marker.action == Marker::DELETEALL) {
+            continue;
+        }
+        const std::uint8_t cr = to_u8(marker.color.r);
+        const std::uint8_t cg = to_u8(marker.color.g);
+        const std::uint8_t cb = to_u8(marker.color.b);
+        if (marker.type == Marker::SPHERE || marker.type == Marker::CUBE ||
+            marker.type == Marker::CYLINDER || marker.type == Marker::ARROW) {
+            push_pt(marker.pose.position.x, marker.pose.position.y,
+                    marker.pose.position.z, cr, cg, cb);
+        } else if (marker.type == Marker::SPHERE_LIST ||
+                   marker.type == Marker::CUBE_LIST ||
+                   marker.type == Marker::POINTS ||
+                   marker.type == Marker::TRIANGLE_LIST) {
+            for (const auto& pt : marker.points) {
+                push_pt(pt.x, pt.y, pt.z, cr, cg, cb);
+            }
+        } else if (marker.type == Marker::LINE_LIST) {
+            for (std::size_t i = 0; i + 1 < marker.points.size(); i += 2) {
+                sample_seg(marker.points[i], marker.points[i + 1], cr, cg, cb);
+            }
+        } else if (marker.type == Marker::LINE_STRIP) {
+            for (std::size_t i = 0; i + 1 < marker.points.size(); ++i) {
+                sample_seg(marker.points[i], marker.points[i + 1], cr, cg, cb);
+            }
+        }
+    }
+
+    sensor_msgs::msg::PointCloud2 msg_pc;
+    pcl::toROSMsg(cloud, msg_pc);
+    msg_pc.header.frame_id = FARUtil::worldFrameId;
+    msg_pc.header.stamp = nh_->now();
+    pub->publish(msg_pc);
 }
 
 void DPVisualizer::VizGlobalPolygons(const std::vector<PointPair>& contour_pairs, const std::vector<PointPair>& unmatched_pairs) {
