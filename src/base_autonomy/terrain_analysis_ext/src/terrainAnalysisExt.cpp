@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <chrono>
 #include <queue>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
@@ -85,6 +86,8 @@ queue<int> planarVoxelQueue;
 
 double laserCloudTime = 0;
 bool newlaserCloud = false;
+// 与输入 /registered_scan 同系（本工程为 camera_init≈odom），勿写死 map
+std::string laserCloudFrame = "camera_init";
 
 double systemInitTime = 0;
 bool systemInited = false;
@@ -114,6 +117,10 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
 void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2)
 {
   laserCloudTime = rclcpp::Time(laserCloud2->header.stamp).seconds();
+  if (!laserCloud2->header.frame_id.empty())
+  {
+    laserCloudFrame = laserCloud2->header.frame_id;
+  }
 
   if (!systemInited)
   {
@@ -556,7 +563,7 @@ int main(int argc, char** argv)
       sensor_msgs::msg::PointCloud2 terrainCloud2;
       pcl::toROSMsg(*terrainCloudElev, terrainCloud2);
       terrainCloud2.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
-      terrainCloud2.header.frame_id = "map";
+      terrainCloud2.header.frame_id = laserCloudFrame;
       pubTerrainCloud->publish(terrainCloud2);
     }
 

@@ -126,14 +126,11 @@ void FARMaster::Init() {
   // waiting for one second
   std::this_thread::sleep_for(std::chrono::seconds(1));
 
-  printf("\033[2J"), printf("\033[0;0H"); // cleanup screen
-  std::cout<<std::endl;
   if (master_params_.is_static_env) {
-    std::cout<<"\033[1;33m **************** STATIC ENV PLANNING **************** \033[0m\n"<<std::endl;
+    RCLCPP_INFO(nh_->get_logger(), "**************** STATIC ENV PLANNING ****************");
   } else {
-    std::cout<< "\033[1;33m **************** DYNAMIC ENV PLANNING **************** \033[0m\n" << std::endl;
+    RCLCPP_INFO(nh_->get_logger(), "**************** DYNAMIC ENV PLANNING ****************");
   }
-  std::cout<<"\n"<<std::endl;
 
   // init complete
   is_init_completed_ = true;
@@ -142,10 +139,7 @@ void FARMaster::Init() {
 
 void FARMaster::ResetEnvironmentAndGraph() {
   this->ResetInternalValues();
-  if (!FARUtil::IsDebug) { // Terminal Output
-    printf("\033[A"), printf("\033[A"), printf("\033[2K");
-    std::cout<< "\033[1;31m V-Graph Resetting...\033[0m\n" << std::endl;
-  }
+  RCLCPP_DEBUG(nh_->get_logger(), "V-Graph Resetting...");
   graph_manager_.ResetCurrentGraph();
   map_handler_.ResetGripMapCloud();
   graph_planner_.ResetPlannerInternalValues();
@@ -192,8 +186,9 @@ void FARMaster::MainLoopCallBack() {
   contour_detector_.BuildTerrainImgAndExtractContour(odom_node_ptr_, FARUtil::surround_obs_cloud_, realworld_contour_);
   contour_graph_.UpdateContourGraph(odom_node_ptr_, realworld_contour_);
   if (is_graph_init_) {
-    if (!FARUtil::IsDebug) printf("\033[2K");
-    std::cout<<"    "<<"Local V-Graph Updated. Number of local vertices: "<<ContourGraph::contour_graph_.size()<<std::endl;
+    RCLCPP_DEBUG(nh_->get_logger(),
+                 "Local V-Graph Updated. Number of local vertices: %zu",
+                 ContourGraph::contour_graph_.size());
   }
   /* Adjust heights with terrain */
   map_handler_.AdjustCTNodeHeight(ContourGraph::contour_graph_);
@@ -214,21 +209,26 @@ void FARMaster::MainLoopCallBack() {
     new_nodes_ = graph_manager_.GetNewNodes();
   }
   if (is_graph_init_) {
-    if (!FARUtil::IsDebug) printf("\033[2K");
-    std::cout<<"    "<< "Number of new vertices adding to global V-Graph: "<< new_nodes_.size()<<std::endl;
+    RCLCPP_DEBUG(nh_->get_logger(),
+                 "Number of new vertices adding to global V-Graph: %zu",
+                 new_nodes_.size());
   }
   /* Graph Updating */
   graph_manager_.UpdateNavGraph(new_nodes_, is_stop_update_, clear_nodes_);
 
-  runtimer_.data = FARUtil::Timer.end_time("Total V-Graph Update", is_graph_init_) / 1000.f; // Unit: second
-  // runtimer_.data = FARUtil::Timer.end_time("Total V-Graph Update", is_graph_init_); // Unit: ms
+  const double vgraph_update_ms = FARUtil::Timer.end_time("Total V-Graph Update");
+  runtimer_.data = vgraph_update_ms / 1000.f; // Unit: second
+  if (is_graph_init_) {
+    RCLCPP_DEBUG(nh_->get_logger(), "Total V-Graph Update Time: %.3f ms", vgraph_update_ms);
+  }
   runtime_pub_->publish(runtimer_);
 
   /* Update v-graph in other modules */
   nav_graph_ = graph_manager_.GetNavGraph();
   if (is_graph_init_) {
-    if (!FARUtil::IsDebug) printf("\033[2K");
-    std::cout<<"    "<<"Global V-Graph Updated. Number of global vertices: "<<nav_graph_.size()<<std::endl;
+    RCLCPP_DEBUG(nh_->get_logger(),
+                 "Global V-Graph Updated. Number of global vertices: %zu",
+                 nav_graph_.size());
   }
   contour_graph_.ExtractGlobalContours();      // Global Polygon Update
   graph_planner_.UpdaetVGraph(nav_graph_);     // Graph Planner Update
@@ -252,20 +252,9 @@ void FARMaster::MainLoopCallBack() {
   // publish nodes visualization
   planner_viz_.PubNodesVisualization();
 
-  if (is_graph_init_) { 
-    if (FARUtil::IsDebug) {
-      std::cout<<" ========================================================== "<<std::endl;
-    } else { // cleanup outputs in terminal
-      for (int i = 0; i < 6; i++) {
-        printf("\033[A");
-      }
-    }
-  }
-
   if (!is_graph_init_ && !nav_graph_.empty()) {
     is_graph_init_ = true;
-    printf("\033[A"), printf("\033[A"), printf("\033[2K");
-    std::cout<< "\033[1;32m V-Graph Initialized \033[0m\n" << std::endl;
+    RCLCPP_INFO(nh_->get_logger(), "V-Graph Initialized");
   }
 
 }
@@ -275,11 +264,9 @@ void FARMaster::PlanningCallBack() {
   const NavNodePtr goal_ptr = graph_planner_.GetGoalNodePtr();
   if (goal_ptr == NULL) {
     /* Graph Traversablity Update */
-    if (!FARUtil::IsDebug) printf("\033[2K");
-    std::cout<<"    "<<"Adding Goal to V-Graph "<<"Time: "<<0.f<<"ms"<<std::endl;
+    RCLCPP_DEBUG(nh_->get_logger(), "Adding Goal to V-Graph Time: 0.000 ms");
     graph_planner_.UpdateGraphTraverability(odom_node_ptr_, NULL);
-    if (!FARUtil::IsDebug) printf("\033[2K");
-    std::cout<<"    "<<"Path Search "<<"Time: "<<0.f<<"ms"<<std::endl;
+    RCLCPP_DEBUG(nh_->get_logger(), "Path Search Time: 0.000 ms");
   } else { 
     // Update goal postion with nearby terrain cloud
     const Point3D ori_p = graph_planner_.GetOriginNodePos(true);
@@ -294,8 +281,8 @@ void FARMaster::PlanningCallBack() {
     FARUtil::Timer.start_time("Adding Goal to V-Graph");
     graph_planner_.UpdateGoalNavNodeConnects(goal_ptr); 
     graph_planner_.UpdaetVGraph(graph_manager_.GetNavGraph());
-    if (!FARUtil::IsDebug) printf("\033[2K");
-    FARUtil::Timer.end_time("Adding Goal to V-Graph");
+    const double add_goal_ms = FARUtil::Timer.end_time("Adding Goal to V-Graph");
+    RCLCPP_DEBUG(nh_->get_logger(), "Adding Goal to V-Graph Time: %.3f ms", add_goal_ms);
 
     // Update v-graph traversibility 
     FARUtil::Timer.start_time("Path Search");
@@ -332,7 +319,6 @@ void FARMaster::PlanningCallBack() {
         goal_pub_->publish(goal_waypoint_stamped_);
       }
     }
-    if (!FARUtil::IsDebug) printf("\033[2K");
 
     // publish planner status and timers
     auto reach_goal_msg = std_msgs::msg::Bool();
@@ -346,6 +332,7 @@ void FARMaster::PlanningCallBack() {
     }
 
     plan_timer_.data = FARUtil::Timer.end_time("Path Search");
+    RCLCPP_DEBUG(nh_->get_logger(), "Path Search Time: %.3f ms", plan_timer_.data);
     planning_time_pub_->publish(plan_timer_);
   }
 }

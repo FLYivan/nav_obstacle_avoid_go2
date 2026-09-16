@@ -29,13 +29,15 @@ public:
         }
     }
 
-    inline double end_time(const string& timer_name, const bool& is_output=true) {
+    // is_output 默认关闭：原先 std::cout 在 ROS2 launch 混流终端里会刷屏；
+    // 需要计时日志时由调用方用返回值打 RCLCPP_DEBUG。
+    inline double end_time(const string& timer_name, const bool& is_output=false) {
         const auto it = timer_stack_.find(timer_name);
         if (it != timer_stack_.end()) {
             const auto end_time = Clock::now();
             const auto duration = duration_cast<microseconds>(end_time - it->second);
             const double time_duration = duration.count() / 1000.0;
-            if (is_output) std::cout<<"    "<<timer_name<<" "<<"Time: "<<time_duration<<"ms"<<std::endl;
+            (void)is_output;
             timer_stack_.erase(it);
             return time_duration;
         } 

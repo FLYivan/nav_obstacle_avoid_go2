@@ -3,6 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <chrono>
+#include <string>
 
 #include "rclcpp/rclcpp.hpp"
 #include "rclcpp/time.hpp"
@@ -104,6 +105,9 @@ vector<float> planarPointElev[planarVoxelNum];
 
 double laserCloudTime = 0;
 bool newlaserCloud = false;
+// 与输入 /registered_scan 同系（本工程为 camera_init≈odom），勿写死 map：
+// AMCL 的 map→odom 只负责全局对齐，局部地形在里程计系算即可。
+std::string laserCloudFrame = "camera_init";
 
 double systemInitTime = 0;
 bool systemInited = false;
@@ -156,6 +160,9 @@ void odometryHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom) {
 // registered laser scan callback function
 void laserCloudHandler(const sensor_msgs::msg::PointCloud2::ConstSharedPtr laserCloud2) {
   laserCloudTime = rclcpp::Time(laserCloud2->header.stamp).seconds();
+  if (!laserCloud2->header.frame_id.empty()) {
+    laserCloudFrame = laserCloud2->header.frame_id;
+  }
   if (!systemInited) {
     systemInitTime = laserCloudTime;
     systemInited = true;
@@ -821,7 +828,7 @@ int main(int argc, char **argv) {
       sensor_msgs::msg::PointCloud2 terrainCloud2;
       pcl::toROSMsg(*terrainCloudElev, terrainCloud2);
       terrainCloud2.header.stamp = rclcpp::Time(static_cast<uint64_t>(laserCloudTime * 1e9));
-      terrainCloud2.header.frame_id = "map";
+      terrainCloud2.header.frame_id = laserCloudFrame;
       pubLaserCloud->publish(terrainCloud2);
     }
 
