@@ -5,6 +5,7 @@
 
 #include <rviz_common/display_context.hpp>
 #include <rviz_common/logging.hpp>
+#include <rviz_common/properties/float_property.hpp>
 #include <rviz_common/properties/string_property.hpp>
 #include <rviz_common/properties/qos_profile_property.hpp>
 
@@ -27,6 +28,11 @@ WaypointTool3D::WaypointTool3D()
   // 创建QoS配置文件属性
   qos_profile_property_ = new rviz_common::properties::QosProfileProperty(
     topic_property_, qos_profile_);
+
+  click_z_offset_property_ = new rviz_common::properties::FloatProperty(
+    "Click Z Offset", 0.4f,
+    "Added to the clicked point-cloud z when /localization is unavailable.",
+    getPropertyContainer(), nullptr, this);
 }
 
 // 析构函数实现
@@ -74,20 +80,25 @@ void WaypointTool3D::localizationHandler(const nav_msgs::msg::Odometry::ConstSha
   }
   z_offset_ = odom->pose.pose.position.z;
   has_localization_ = true;
-  RCLCPP_INFO(
+  RCLCPP_INFO_STREAM(
     context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
-    "[WaypointTool-3D] 锁定收敛后首帧 /localization 相对原点的z差值: %.3f",
-    z_offset_);
+    "\033[1;34m[WaypointTool-3D]\033[0m 锁定收敛后首帧 /localization 相对原点的z差值: "
+    << z_offset_);
 }
 
 void WaypointTool3D::onPoseSet(double x, double y, double z, double /*theta*/)
 {
-  const float goal_z = has_localization_ ? static_cast<float>(z) + z_offset_ : static_cast<float>(z);
-  RCLCPP_INFO(
+  const float click_z_offset = click_z_offset_property_->getFloat();
+  const float applied_offset = has_localization_ ? z_offset_ : click_z_offset;
+  const float goal_z = static_cast<float>(z) + applied_offset;
+  const std::string fixed_frame = context_->getFixedFrame().toStdString();
+  RCLCPP_INFO_STREAM(
     context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
-    "[WaypointTool-3D] 点击(%.3f, %.3f, %.3f) 偏移=%.3f 发布z=%.3f 来源=%s",
-    x, y, z, has_localization_ ? z_offset_ : 0.0f, goal_z,
-    has_localization_ ? "/localization" : "click");
+    "\033[1;34m[WaypointTool-3D]\033[0m 点击(" << x << ", " << y << ", " << z
+    << ") 偏移=" << applied_offset
+    << " 发布z=" << goal_z
+    << " 来源=" << (has_localization_ ? "/localization" : "click")
+    << " 坐标系=" << fixed_frame);
 
   // 创建Joy消息
   sensor_msgs::msg::Joy joy;

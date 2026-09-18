@@ -13,6 +13,7 @@
 #include <dddmr_rviz_default_plugins/tools/pose/pose_tool.hpp>
 
 #include <rviz_common/display_context.hpp>
+#include <rviz_common/properties/float_property.hpp>
 #include <rviz_common/properties/string_property.hpp>
 #include <rviz_common/tool.hpp>
 
@@ -21,6 +22,7 @@ namespace rviz_common
 class DisplayContext;
 namespace properties
 {
+class FloatProperty;
 class StringProperty;
 class QosProfileProperty;
 }  // namespace properties
@@ -53,6 +55,7 @@ private:
   rclcpp::Clock::SharedPtr clock_;
   
   rviz_common::properties::StringProperty* topic_property_;
+  rviz_common::properties::FloatProperty* click_z_offset_property_;
   rviz_common::properties::QosProfileProperty* qos_profile_property_;
   rclcpp::QoS qos_profile_;
 };
