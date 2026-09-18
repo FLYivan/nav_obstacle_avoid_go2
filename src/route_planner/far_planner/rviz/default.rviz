@@ -69,22 +69,22 @@ Visualization Manager:
         Reliability Policy: Reliable
         Value: /camera/semantic_image/raw
       Value: false
-    - Alpha: 0.10000000149011612
+    - Alpha: 0.5
       Autocompute Intensity Bounds: true
       Autocompute Value Bounds:
-        Max Value: 2.693204402923584
-        Min Value: -1.9522557258605957
+        Max Value: 2.339982748031616
+        Min Value: -1.1737271547317505
         Value: true
       Axis: Z
       Channel Name: intensity
       Class: rviz_default_plugins/PointCloud2
       Color: 255; 255; 255
-      Color Transformer: ""
-      Decay Time: 10
+      Color Transformer: AxisColor
+      Decay Time: 60
       Enabled: true
       Invert Rainbow: false
       Max Color: 255; 255; 255
-      Max Intensity: 154
+      Max Intensity: 153
       Min Color: 0; 0; 0
       Min Intensity: 0
       Name: RegScan
@@ -305,7 +305,7 @@ Visualization Manager:
       Enabled: true
       Name: GlobalPath
       Namespaces:
-        {}
+        global_path: true
       Topic:
         Depth: 5
         Durability Policy: Volatile
@@ -609,7 +609,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 9.112882614135742
+      Distance: 26.445404052734375
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -624,10 +624,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.5647963285446167
+      Pitch: 1.4397960901260376
       Target Frame: map
       Value: Orbit (rviz)
-      Yaw: 3.023627758026123
+      Yaw: 3.1536316871643066
     Saved: ~
 Window Geometry:
   Displays:
