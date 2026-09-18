@@ -40,15 +40,22 @@ public:
   virtual void onInitialize() override;
 
 protected:
+  void localizationHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom);
   void odomHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom);
+  float selectVehicleZ(const char ** source) const;
   void onPoseSet(double x, double y, double theta) override;
 
 private Q_SLOTS:
   void updateTopic();
 
 private:
-  float vehicle_z;
-  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_;
+  float localization_z_;
+  float state_z_;
+  bool has_localization_;
+  rclcpp::Time last_localization_time_;
+
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_localization_;
+  rclcpp::Subscription<nav_msgs::msg::Odometry>::SharedPtr sub_state_;
   rclcpp::Publisher<geometry_msgs::msg::PointStamped>::SharedPtr pub_;
   rclcpp::Publisher<sensor_msgs::msg::Joy>::SharedPtr pub_joy_;
   

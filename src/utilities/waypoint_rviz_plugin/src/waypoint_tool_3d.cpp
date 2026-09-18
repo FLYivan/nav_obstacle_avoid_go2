@@ -12,7 +12,8 @@ namespace waypoint_rviz_plugin
 {
 // 构造函数实现
 WaypointTool3D::WaypointTool3D()
-: dddmr_rviz_default_plugins::tools::PoseTool(), qos_profile_(5)
+: dddmr_rviz_default_plugins::tools::PoseTool(), qos_profile_(5),
+  z_offset_(0), has_localization_(false)
 {
   // 设置快捷键为'w'
   shortcut_key_ = 'q';
@@ -54,6 +55,9 @@ void WaypointTool3D::updateTopic()
   
 
   // 创建路径点发布者
+  sub_localization_ = raw_node->create_subscription<nav_msgs::msg::Odometry>(
+    "/localization", 5, std::bind(&WaypointTool3D::localizationHandler, this, std::placeholders::_1));
+
   pub_ = raw_node->create_publisher<geometry_msgs::msg::PointStamped>(
     "/way_point", qos_profile_);
   // 创建Joy消息发布者
@@ -63,14 +67,27 @@ void WaypointTool3D::updateTopic()
   clock_ = raw_node->get_clock();
 }
 
+void WaypointTool3D::localizationHandler(const nav_msgs::msg::Odometry::ConstSharedPtr odom)
+{
+  if (has_localization_) {
+    return;
+  }
+  z_offset_ = odom->pose.pose.position.z;
+  has_localization_ = true;
+  RCLCPP_INFO(
+    context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
+    "[WaypointTool-3D] 锁定收敛后首帧 /localization 相对原点的z差值: %.3f",
+    z_offset_);
+}
 
-// 设置位姿的回调函数
 void WaypointTool3D::onPoseSet(double x, double y, double z, double /*theta*/)
 {
-  // 添加彩色日志输出
-  RCLCPP_INFO_STREAM(
+  const float goal_z = has_localization_ ? static_cast<float>(z) + z_offset_ : static_cast<float>(z);
+  RCLCPP_INFO(
     context_->getRosNodeAbstraction().lock()->get_raw_node()->get_logger(),
-    "\033[1;34m[WaypointTool-3D]\033[0m 设置3D导航点 - 坐标: (" << x << ", " << y << ", " << z << ") " );
+    "[WaypointTool-3D] 点击(%.3f, %.3f, %.3f) 偏移=%.3f 发布z=%.3f 来源=%s",
+    x, y, z, has_localization_ ? z_offset_ : 0.0f, goal_z,
+    has_localization_ ? "/localization" : "click");
 
   // 创建Joy消息
   sensor_msgs::msg::Joy joy;
@@ -110,7 +127,7 @@ void WaypointTool3D::onPoseSet(double x, double y, double z, double /*theta*/)
   waypoint.header.stamp = joy.header.stamp;
   waypoint.point.x = x;
   waypoint.point.y = y;
-  waypoint.point.z = z;  
+  waypoint.point.z = goal_z;  
 
   // 发布路径点消息两次,确保消息被接收
   pub_->publish(waypoint);
