@@ -4,7 +4,7 @@ far_planner:
     main_run_freq: 5.0
     voxel_dim: 0.1  # Unit: meter
     robot_dim: 0.3   # Unit: meter              默认值0.6 
-    vehicle_height: 0.5  # Unit: meter          # 限制目标点z轴高度最低值 地形高度 + 车辆高度
+    vehicle_height: 0.4  # Unit: meter          # map坐标系下，里程计原点相对地面的高度常量。go2端mid360雷达：0.4
     sensor_range: 10.0  # Unit: meter
     terrain_range: 7.5   # Unit: meter
     local_planner_range: 2.5   # Unit: meter
