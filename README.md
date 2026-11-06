@@ -154,7 +154,7 @@ L1激光雷达特点：
 
    3、结合自探索建图
       ./system_real_robot_with_tare_planner.sh
-      ros2 launch tare_planner explore.launch
+      ros2 launch tare_planner explore.launch.py
 
 ## 保存地图
    地图保存在PCD文件夹中，使用以下命令可以查看

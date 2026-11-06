@@ -31,7 +31,7 @@
     <arg name="checkTerrainConn" value="$(var checkTerrainConn)"/>
   </include>
 
-  <include file="$(find-pkg-share vehicle_simulator)/launch/vehicle_simulator.launch" >
+  <include file="$(find-pkg-share vehicle_simulator)/launch/vehicle_simulator.launch.py" >
     <arg name="vehicleHeight" value="$(var vehicleHeight)"/>
     <arg name="sensorOffsetX" value="$(var sensorOffsetX)" />
     <arg name="sensorOffsetY" value="$(var sensorOffsetY)" />
@@ -61,7 +61,7 @@
     <param name="depth_raw_out_topic" value="/camera/depth/raw"/>
   </node>
 
-  <include file="$(find-pkg-share far_planner)/launch/far_planner.launch" />
+  <include file="$(find-pkg-share far_planner)/launch/far_planner.launch.py" />
 
   <!-- <node launch-prefix="nice" pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz"/> -->
 

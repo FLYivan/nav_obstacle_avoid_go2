@@ -31,8 +31,8 @@
     <arg name="checkTerrainConn" value="$(var checkTerrainConn)"/>
   </include>
 
-  <!-- <include file="$(env VEHICLE_SIM_PATH)/launch/vehicle_simulator.launch" > -->
-  <include file="$(find-pkg-share vehicle_simulator)/launch/vehicle_simulator.launch" >
+  <!-- <include file="$(env VEHICLE_SIM_PATH)/launch/vehicle_simulator.launch.py" > -->
+  <include file="$(find-pkg-share vehicle_simulator)/launch/vehicle_simulator.launch.py" >
     <arg name="vehicleHeight" value="$(var vehicleHeight)"/>
     <arg name="sensorOffsetX" value="$(var sensorOffsetX)" />
     <arg name="sensorOffsetY" value="$(var sensorOffsetY)" />

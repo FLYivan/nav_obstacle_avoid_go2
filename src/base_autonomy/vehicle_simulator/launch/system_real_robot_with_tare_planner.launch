@@ -42,7 +42,7 @@
     <arg name="world_name" value="$(var world_name)"/>
   </include> -->
 
-  <include file="$(find-pkg-share tare_planner)/explore_world.launch" />
+  <include file="$(find-pkg-share tare_planner)/launch/explore_world.launch.py" />
 
   <!-- <node launch-prefix="nice" pkg="rviz2" exec="rviz2" name="rvizGA" args="-d $(find-pkg-share vehicle_simulator)/rviz/vehicle_simulator.rviz"/> -->
 

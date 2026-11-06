@@ -12,8 +12,8 @@ set_target_properties(ortools::ortools PROPERTIES
   IMPORTED_SONAME_RELEASE "libortools.so.9"
   )
 
-list(APPEND _cmake_import_check_targets ortools::ortools )
-list(APPEND _cmake_import_check_files_for_ortools::ortools "${_IMPORT_PREFIX}/lib/libortools.so.9.8.3296" )
+list(APPEND _IMPORT_CHECK_TARGETS ortools::ortools )
+list(APPEND _IMPORT_CHECK_FILES_FOR_ortools::ortools "${_IMPORT_PREFIX}/lib/libortools.so.9.8.3296" )
 
 # Import target "ortools::flatzinc" for configuration "Release"
 set_property(TARGET ortools::flatzinc APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
@@ -22,8 +22,8 @@ set_target_properties(ortools::flatzinc PROPERTIES
   IMPORTED_SONAME_RELEASE "libortools_flatzinc.so.9"
   )
 
-list(APPEND _cmake_import_check_targets ortools::flatzinc )
-list(APPEND _cmake_import_check_files_for_ortools::flatzinc "${_IMPORT_PREFIX}/lib/libortools_flatzinc.so.9.8.3296" )
+list(APPEND _IMPORT_CHECK_TARGETS ortools::flatzinc )
+list(APPEND _IMPORT_CHECK_FILES_FOR_ortools::flatzinc "${_IMPORT_PREFIX}/lib/libortools_flatzinc.so.9.8.3296" )
 
 # Import target "ortools::fzn" for configuration "Release"
 set_property(TARGET ortools::fzn APPEND PROPERTY IMPORTED_CONFIGURATIONS RELEASE)
@@ -31,8 +31,8 @@ set_target_properties(ortools::fzn PROPERTIES
   IMPORTED_LOCATION_RELEASE "${_IMPORT_PREFIX}/bin/fzn-cp-sat"
   )
 
-list(APPEND _cmake_import_check_targets ortools::fzn )
-list(APPEND _cmake_import_check_files_for_ortools::fzn "${_IMPORT_PREFIX}/bin/fzn-cp-sat" )
+list(APPEND _IMPORT_CHECK_TARGETS ortools::fzn )
+list(APPEND _IMPORT_CHECK_FILES_FOR_ortools::fzn "${_IMPORT_PREFIX}/bin/fzn-cp-sat" )
 
 # Commands beyond this point should not need to know the version.
 set(CMAKE_IMPORT_FILE_VERSION)

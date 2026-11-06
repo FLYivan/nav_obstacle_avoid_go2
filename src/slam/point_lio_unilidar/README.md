@@ -28,14 +28,11 @@ If you want to learn more about our lidar, you can refer to the official website
 ## Prerequisites
 
 ### Ubuntu and ROS
-We tested our code on Ubuntu20.04 with [ROS noetic](http://wiki.ros.org/noetic/Installation/Ubuntu). Ubuntu18.04 and lower versions have problems of environments to support the Point-LIO, try to avoid using Point-LIO in those systems. 
-
-You can refer to the official website to install ROS noetic:
-- <http://wiki.ros.org/noetic/Installation/Ubuntu>
+This package is adapted for **Ubuntu 22.04 + ROS 2 Humble** (ament/colcon).
 
 Additional ROS package is required:
 ```
-sudo apt-get install ros-xxx-pcl-conversions
+sudo apt-get install ros-humble-pcl-conversions
 ```
 
 ### Eigen
