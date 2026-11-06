@@ -6,7 +6,7 @@ Panels:
       Expanded:
         - /Global1
         - /Local1
-        - /SCAN-Planner1
+        - /Marker1/Topic1
       Splitter Ratio: 0.597744345664978
     Tree Height: 1303
   - Class: rviz_common/Selection
@@ -24,7 +24,7 @@ Panels:
     Experimental: false
     Name: Time
     SyncMode: 0
-    SyncSource: 未覆盖的普通点云
+    SyncSource: ""
   - Class: teleop_rviz_plugin/TeleopPanel
     Name: TeleopPanel
 Visualization Manager:
@@ -230,7 +230,7 @@ Visualization Manager:
           Enabled: true
           Name: 自主探索区
           Namespaces:
-            "": true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -833,7 +833,7 @@ Visualization Manager:
           Autocompute Intensity Bounds: true
           Autocompute Value Bounds:
             Max Value: 0.2750000059604645
-            Min Value: -0.675000011920929
+            Min Value: -0.925000011920929
             Value: true
           Axis: Z
           Channel Name: intensity
@@ -901,7 +901,7 @@ Visualization Manager:
           Enabled: true
           Name: Sliding Map Bounds
           Namespaces:
-            sliding_map: true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -914,7 +914,7 @@ Visualization Manager:
           Enabled: true
           Name: Goal
           Namespaces:
-            "": true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -928,49 +928,20 @@ Visualization Manager:
           Frame Timeout: 15
           Frames:
             All Enabled: true
-            aft_mapped:
-              Value: true
-            camera_init:
-              Value: true
-            map:
-              Value: true
-            odom:
-              Value: true
-            sensor:
-              Value: true
-            sensor_at_scan:
-              Value: true
-            sliding_map:
-              Value: true
-            vehicle:
-              Value: true
-            world:
-              Value: true
           Marker Scale: 1
           Name: TF
           Show Arrows: true
           Show Axes: true
           Show Names: false
           Tree:
-            map:
-              odom:
-                camera_init:
-                  aft_mapped:
-                    sensor:
-                      vehicle:
-                        {}
-              sensor_at_scan:
-                {}
-              world:
-                sliding_map:
-                  {}
+            {}
           Update Interval: 0
           Value: true
         - Class: rviz_default_plugins/Marker
           Enabled: true
           Name: Optimal List
           Namespaces:
-            "": true
+            {}
           Topic:
             Depth: 5
             Durability Policy: Volatile
@@ -981,6 +952,19 @@ Visualization Manager:
           Value: true
       Enabled: true
       Name: SCAN-Planner
+    - Class: rviz_default_plugins/Marker
+      Enabled: true
+      Name: Marker
+      Namespaces:
+        {}
+      Topic:
+        Depth: 5
+        Durability Policy: Volatile
+        Filter size: 10
+        History Policy: Keep Last
+        Reliability Policy: Reliable
+        Value: /explored_area_marker
+      Value: true
   Enabled: true
   Global Options:
     Background Color: 0; 0; 0
@@ -1017,7 +1001,7 @@ Visualization Manager:
   Views:
     Current:
       Class: rviz_default_plugins/Orbit
-      Distance: 14.062782287597656
+      Distance: 18.915916442871094
       Enable Stereo Rendering:
         Stereo Eye Separation: 0.05999999865889549
         Stereo Focal Distance: 1
@@ -1032,10 +1016,10 @@ Visualization Manager:
       Invert Z Axis: false
       Name: Current View
       Near Clip Distance: 0.009999999776482582
-      Pitch: 1.4947963953018188
+      Pitch: 1.5697963237762451
       Target Frame: map
       Value: XYOrbit (rviz)
-      Yaw: 4.215418815612793
+      Yaw: 3.4154160022735596
     Saved: ~
 Window Geometry:
   Displays:
